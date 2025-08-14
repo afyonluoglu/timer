@@ -2,6 +2,8 @@
 
 A comprehensive timer and reminder application built with Python and Tkinter, featuring games and a rich notification system.
 
+> **Version:** 1.0.0 | **Last Updated:** August 2025
+
 ## Features
 
 ### ⏰ Timer & Reminder System
