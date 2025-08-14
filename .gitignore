@@ -1,0 +1,39 @@
+# Log files
+*.log
+*.txt
+timer-data/zamanlayici_log.txt
+timer-data/log_favori_search.txt
+
+# Settings and configuration files
+*.json
+timer-data/zamanlayici_ayarlar.json
+sudoku_puanlar.json
+tetris_puanlar.json
+
+# Compiled Python files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Executable files
+*.exe
+*.spec
+
+# Temporary files
+temp.py
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# But include some specific files that are not settings/logs
+!timer_beni_oku.txt
+!bilgi.txt
+!timer-help.txt

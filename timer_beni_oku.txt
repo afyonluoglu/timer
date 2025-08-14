@@ -1,0 +1,46 @@
+Bölüm 1: Program Tanıtımı ve Kullanım Alanları
+
+Bu grafik tabanlı uygulama, zaman yönetimi ihtiyaçlarınız için geliştirilmiş çok yönlü bir araçtır. Program, temel olarak iki farklı modda çalışır: **Zamanlayıcı (Geri Sayım)** ve **Hatırlatıcı (Alarm)**.
+
+**Zamanlayıcı ve Hatırlatıcı Arasındaki Fark Nedir?**
+
+*   **Zamanlayıcı (Timer):** Belirlediğiniz bir *süre* boyunca geri sayım yapar. Örneğin, "25 dakika sonra" alarm çalmasını istediğinizde bu modu kullanırsınız. Pomodoro tekniği, egzersiz araları veya yemek pişirme süreleri için idealdir. Geri sayım süreci görsel olarak takip edilebilir.
+
+*   **Hatırlatıcı (Reminder/Alarm):** Belirlediğiniz belirli bir *tarih ve saatte* sizi uyarır. Bu mod, hem tek seferlik olaylar hem de düzenli rutinler için kullanılabilir:
+    -   **Tek Seferlik Hatırlatıcı:** "Yarın saat 15:30'da" bir toplantınız olduğunu hatırlatmak gibi, sadece bir kez gerçekleşecek olaylar için kullanılır.
+    -   **Tekrarlı Hatırlatıcı:** Günlük, haftalık veya aylık olarak tekrar eden rutinleriniz için idealdir. Örneğin, her gün saat 08:00'de ilaç almanız gerektiğini veya her Cuma saat 17:00'de rapor göndermeniz gerektiğini size düzenli olarak hatırlatabilir. Bu özellik, alışkanlık oluşturmanıza ve önemli rutinleri atlamamanıza yardımcı olur.
+
+Bu uygulama, her iki ihtiyaca da yönelik özellikler sunarak günlük görev takibi, ders çalışma, proje yönetimi ve kişisel planlama gibi birçok alanda verimliliğinizi artırmanıza yardımcı olur.
+
+Başlıca Özellikler:
+  - Esnek Zaman Ayarı: Zamanlayıcı için dakika cinsinden süre veya hatırlatıcı için belirli bir saat (tek seferlik veya tekrarlı) ayarlayabilirsiniz.
+  - Canlı Geri Sayım: Zamanlayıcı modunda, kalan süreyi ve ilerlemeyi dinamik bir ilerleme çubuğu ile görsel olarak takip edebilirsiniz.
+  - Tam Kontrol: Zamanlayıcıyı "Başlat", "Duraklat" ve "Sıfırla" düğmeleriyle dilediğiniz gibi yönetebilirsiniz.
+  - Görsel ve Sesli Uyarılar: Süre dolduğunda ekranda bir bildirim belirir ve isteğe bağlı olarak sesli bir alarm çalar.
+  - Tema Desteği: Açık ve koyu mod gibi farklı arayüz temaları arasından seçim yapabilirsiniz.
+
+Bölüm 2: Gerekli Python Sürümü
+
+Bu programın sorunsuz çalışması için bilgisayarınızda **Python 3.13.2** veya daha yeni bir sürümün yüklü olması gerekmektedir.
+
+Mevcut Python Sürümünüzü Öğrenme:
+1. Windows'ta "Başlat" menüsünü açın, `cmd` yazın ve "Komut İstemi" uygulamasını çalıştırın.
+2. Açılan siyah ekrana aşağıdaki komutlardan birini yazıp Enter tuşuna basın:
+   `py --version` veya `python --version`
+3. Ekranda `Python 3.x.x` gibi bir çıktı görmelisiniz. Eğer sürüm 3.6'dan eskiyse veya "komut tanınmıyor" hatası alırsanız, Python'u kurmanız veya güncellemeniz gerekir.
+
+Python Nasıl Güncellenir/Kurulur?
+Python'u güncellemenin en güvenli yolu, resmi web sitesinden en son sürümü indirip kurmaktır.
+1. `python.org` adresine gidin.
+2. "Downloads" bölümünden Windows için önerilen en son sürümü indirin.
+3. İndirdiğiniz yükleyiciyi çalıştırın. Kurulum sırasında "Add Python to PATH" seçeneğini işaretlediğinizden emin olun. Bu, komut isteminden Python'u kolayca çalıştırmanızı sağlar.
+
+Bölüm 3: Gerekli Kütüphaneler ve Kurulum
+
+Bu program, Python ile birlikte gelen standart kütüphaneleri (Tkinter, time, winsound vb.) kullandığı için genellikle ek bir kütüphane kurulumu gerektirmez.
+
+Ancak, paket yöneticiniz olan `pip`'in güncel olması her zaman iyi bir pratiktir. Komut İstemi'ne aşağıdaki komutu yazarak `pip`'i güncelleyebilirsiniz:
+`pip install --upgrade pip`
+
+Eğer ileride sesli uyarılar için `playsound` gibi harici bir kütüphane kullanmak isterseniz, kurulumu şu komutla yapabilirsiniz:
+`pip install playsound`

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Zamanlayıcı Uygulaması - Kullanım Kılavuzu</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            line-height: 1.2; 
+            font-size: 22px; }
+        h1 { 
+            color:rgb(62, 88, 222); 
+            background-color: rgb(248, 255, 169)  !important; 
+            border-bottom: 3px solid rgb(7, 4, 167); 
+            padding-bottom: 10px; 
+            font-size: 52px;
+            font-weight: bold;
+            text-align: center; }
+        h2 { 
+            color:rgb(136, 38, 249); 
+            border-bottom: 1px solid #bdc3c7; 
+            padding-bottom: 5px; 
+            margin-top: 30px; }
+        h3 { 
+            color:rgb(48, 108, 186); 
+            margin-top: 20px; 
+            font-weight: bold; }
+        .feature { 
+            background-color:rgb(162, 236, 255); 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 5px; }
+        .shortcut { 
+            background-color:rgb(183, 252, 183); 
+            padding: 10px; margin: 10px 0; 
+            border-radius: 5px; 
+            border-left: 4px solid #27ae60; }
+        .warning { 
+            background-color:rgb(249, 220, 193); 
+            padding: 10px; margin: 10px 0; 
+            border-radius: 5px; 
+            border-left: 4px solid #f39c12; }
+        .tip { 
+            background-color:rgb(175, 218, 251); 
+            padding: 10px; margin: 10px 0; 
+            border-radius: 5px; 
+            border-left: 4px solid #3498db; }
+        code { 
+            background-color:rgb(188, 190, 248); 
+            padding: 2px 5px; 
+            border-radius: 3px; 
+            font-family: monospace; }
+        ul { margin-left: 20px; }
+        li { margin-bottom: 5px; }
+        .new { 
+            color: #e74c3c; 
+            font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<h1>🕐 Zamanlayıcı Uygulaması - Kullanım Kılavuzu</h1>
+<p> Mustafa 
+<span style="
+    font-size: 35px;             
+    color:rgb(255, 180, 74); 
+    font-weight: bold; 
+    background-color:rgb(152, 83, 0); ;
+"> 
+Ankara </span> </p>
+
+<h2>📋 Genel Bakış</h2>
+<p>Bu zamanlayıcı uygulaması, birden fazla zamanlayıcıyı aynı anda çalıştırmanıza, tekrarlayan alarmlar ayarlamanıza ve favori zamanlayıcılarınızı yönetmenize olanak tanıyan gelişmiş bir araçtır.</p>
+
+<h2>🚀 Ana Özellikler</h2>
+
+<div class="feature">
+<h3>✨ Yeni Zamanlayıcı Oluşturma</h3>
+<ul>
+    <li><strong>Dakika Ayarı:</strong> 1-180 dakika arası zamanlayıcı kurabilirsiniz</li>
+    <li><strong>Açıklama:</strong> Her zamanlayıcı için özel açıklama ekleyebilirsiniz</li>
+    <li><strong>Alarm Zamanı Belirleme:</strong> Belirli bir saatte çalacak alarm kurabilirsiniz (İlk alarm için)</li>
+    <li><strong>Alarm Sesi Seçimi:</strong> Farklı alarm seslerini seçebilir ve önizleyebilirsiniz</li>
+    <li><strong>Tekrar Sayısı:</strong> 1-99 arası tekrar sayısı belirleyebilirsiniz</li>
+    <li><strong>Tekrar Aralığı:</strong> Tekrarlar arası 0-180 dakika süre ayarlayabilirsiniz</li>
+</ul>
+</div>
+
+<div class="feature">
+<h3>🔄 Aktif Zamanlayıcı Yönetimi</h3>
+<ul>
+    <li><strong>Çoklu Zamanlayıcı:</strong> Aynı anda birden fazla zamanlayıcı çalıştırabilirsiniz</li>
+    <li><strong>Gerçek Zamanlı Güncelleme:</strong> Kalan süre her saniye güncellenir</li>
+    <li><strong>Durdurma:</strong> İstediğiniz zaman zamanlayıcıyı durdurabilirsiniz</li>
+    <li><strong class="new">Çift Tık Düzenleme:</strong> Aktif zamanlayıcıya çift tıklayarak ayarlarını değiştirebilirsiniz</li>
+    <li><strong>Tekrar Bilgisi:</strong> Tekrarlayan alarmlarda kaçıncı tekrarda olduğunuz gösterilir</li>
+</ul>
+</div>
+
+<h2>⭐ <span class="new">FAVORİ SİSTEMİ</span></h2>
+
+<div class="feature">
+<h3>📌 Favori Ekleme</h3>
+<ul>
+    <li><strong>Geçmişten Favori:</strong> Geçmiş listesinde herhangi bir zamanlayıcıya sağ tıklayıp "Favorilere Ekle" seçeneğini kullanın</li>
+    <li><strong>Aynı Favori Kontrolü:</strong> Aynı ayarlarda favori zaten varsa uyarı alırsınız</li>
+    <li><strong>Otomatik Kaydetme:</strong> Favoriler otomatik olarak kaydedilir ve program yeniden açıldığında yüklenir</li>
+</ul>
+</div>
+
+<div class="feature">
+<h3>🎯 Favori Kullanma</h3>
+<ul>
+    <li><strong>Hızlı Başlatma:</strong> Favori listesinde herhangi bir zamanlayıcıya çift tıklayarak hemen başlatabilirsiniz</li>
+    <li><strong class="new">Favori Düzenleme:</strong> Favori listesinde sağ tıklayıp "Favoriyi Düzenle" ile ayarları değiştirebilirsiniz</li>
+    <li><strong>Toplu Silme:</strong> Birden fazla favoriyi seçip toplu olarak silebilirsiniz</li>
+    <li><strong>Otomatik Gizlenme:</strong> Favori başlattıktan sonra liste otomatik olarak gizlenir</li>
+</ul>
+</div>
+
+<h2>⌨️ <span class="new">KLAVYE KISAYOLLARI</span></h2>
+
+<div class="shortcut">
+<h3>🔥 Hızlı Erişim Tuşları</h3>
+<ul>
+    <li><strong>F Tuşu:</strong> Favori listesini açar/kapatır</li>
+    <li><strong>G Tuşu:</strong> Geçmiş listesini açar/kapatır</li>
+    <li><strong>ESC Tuşu:</strong> Açık olan paneli (favori veya geçmiş) kapatır</li>
+</ul>
+</div>
+
+<div class="tip">
+<strong>💡 İpucu:</strong> Klavye kısayolları sayesinde fare kullanmadan hızlıca paneller arasında gezinebilirsiniz!
+</div>
+
+<h2>📊 Geçmiş ve Kayıtlar</h2>
+
+<div class="feature">
+<h3>📈 Geçmiş Listesi</h3>
+<ul>
+    <li><strong>Otomatik Kayıt:</strong> Tamamlanan tüm zamanlayıcılar otomatik olarak geçmişe kaydedilir</li>
+    <li><strong>Detaylı Bilgi:</strong> Tarih, süre, açıklama, alarm türü ve tekrar bilgileri gösterilir</li>
+    <li><strong>Yeniden Başlatma:</strong> Geçmişteki herhangi bir zamanlayıcıya çift tıklayarak yeniden başlatabilirsiniz</li>
+    <li><strong>Seçerek Silme:</strong> İstemediğiniz kayıtları seçerek silebilirsiniz</li>
+    <li><strong class="new">Sağ Tık Menüsü:</strong> Geçmiş kayıtlarına sağ tıklayıp favorilere ekleyebilirsiniz</li>
+</ul>
+</div>
+
+<h2>🔊 Alarm Sistemi</h2>
+
+<div class="feature">
+<h3>🎵 Alarm Özellikleri</h3>
+<ul>
+    <li><strong>Çoklu Alarm Dosyası:</strong> timer-data klasöründeki alarm*.mp3 dosyalarını kullanabilirsiniz</li>
+    <li><strong>Önizleme:</strong> Zamanlayıcı ayarlarken alarm sesini dinleyebilirsiniz</li>
+    <li><strong>Döngüsel Çalma:</strong> Alarm sesi kapatılana kadar tekrar eder</li>
+    <li><strong>Dosya Yedekleme:</strong> Alarm dosyası bulunamazsa varsayılan alarm kullanılır</li>
+</ul>
+</div>
+
+<h2>⚙️ Gelişmiş Özellikler</h2>
+
+<div class="feature">
+<h3>🕐 Özel Saat Ayarı</h3>
+<ul>
+    <li><strong>Belirli Saat:</strong> "Alarm Zamanı Belirle" seçeneği ile zamanlayıcıyı belirli bir saatte çalacak şekilde ayarlayabilirsiniz</li>
+    <li><strong>Otomatik Hesaplama:</strong> Mevcut zamandan hedef saate kadar kalan süre otomatik hesaplanır</li>
+    <li><strong>Ertesi Gün Desteği:</strong> Hedef saat geçmişse otomatik olarak ertesi güne ayarlanır</li>
+    <li><strong class="new">Favori Düzenlemede:</strong> Favorileri düzenlerken özel saat ayarını değiştirebilirsiniz</li>
+</ul>
+</div>
+
+<div class="feature">
+<h3>🔄 Tekrar Sistemi</h3>
+<ul>
+    <li><strong>Çoklu Tekrar:</strong> Bir zamanlayıcının 1-99 kez tekrarlanmasını sağlayabilirsiniz</li>
+    <li><strong>Aralık Ayarı:</strong> Tekrarlar arası bekleme süresi ayarlayabilirsiniz</li>
+    <li><strong>Tekrar Takibi:</strong> Kaçıncı tekrarda olduğunuz görüntülenir</li>
+    <li><strong>Otomatik Başlatma:</strong> Her tekrar belirtilen aralık sonunda otomatik başlar</li>
+</ul>
+</div>
+
+<h2>💾 Veri Yönetimi</h2>
+
+<div class="feature">
+<h3>🗂️ Otomatik Kaydetme</h3>
+<ul>
+    <li><strong>Sürekli Kayıt:</strong> Tüm ayarlar ve aktif zamanlayıcılar otomatik kaydedilir</li>
+    <li><strong>Program Kurtarma:</strong> Program kapanıp açıldığında aktif zamanlayıcılar kaldığı yerden devam eder</li>
+    <li><strong class="new">Favori Kalıcılığı:</strong> Favoriler JSON dosyasında saklanır ve her açılışta yüklenir</li>
+    <li><strong>Geçmiş Saklama:</strong> Tüm geçmiş kayıtları kalıcı olarak saklanır</li>
+</ul>
+</div>
+
+<h2>🎮 Ek Araçlar</h2>
+
+<div class="feature">
+<h3>📁 Dosya Analizi</h3>
+<ul>
+    <li><strong>Klasör Boyutu:</strong> Seçilen klasörlerin boyutunu ve dosya sayısını analiz eder</li>
+    <li><strong>Alt Klasör Analizi:</strong> Alt klasörlerin boyutlarını ayrı ayrı gösterir</li>
+    <li><strong>Navigasyon:</strong> Klasörler arası kolayca gezinebilirsiniz</li>
+</ul>
+</div>
+
+<div class="feature">
+<h3>🎲 Oyunlar</h3>
+<ul>
+    <li><strong>Sudoku:</strong> Farklı zorluk seviyeleri ile sudoku oynayabilirsiniz</li>
+    <li><strong>Tetris:</strong> Klasik tetris oyunu</li>
+</ul>
+</div>
+
+<h2>🔧 Teknik Gereksinimler</h2>
+
+<div class="warning">
+<h3>📦 Gerekli Kütüphaneler</h3>
+<ul>
+    <li><code>pip install PyQt5</code></li>
+    <li>Python 3.6 veya üzeri</li>
+</ul>
+</div>
+
+<div class="feature">
+<h3>📂 Dosya Yapısı</h3>
+<ul>
+    <li><strong>timer-data/:</strong> Alarm dosyaları ve ayarların saklandığı klasör</li>
+    <li><strong>alarm*.mp3:</strong> timer-data klasöründeki alarm ses dosyaları</li>
+    <li><strong>zamanlayici_ayarlar.json:</strong> Tüm ayarlar ve veriler</li>
+</ul>
+</div>
+
+<h2>🛠️ Sorun Giderme</h2>
+
+<div class="warning">
+<h3>⚠️ Yaygın Sorunlar</h3>
+<ul>
+    <li><strong>Alarm Çalmıyor:</strong> timer-data klasöründe alarm-01.mp3 dosyasının varlığını kontrol edin</li>
+    <li><strong>Ayarlar Kayboldu:</strong> zamanlayici_ayarlar.json dosyasının varlığını ve iznini kontrol edin</li>
+    <li><strong>Program Çöküyor:</strong> PyQt5 kütüphanesinin doğru yüklendiğinden emin olun</li>
+    <li><strong class="new">Favori Düzenlenmiyor:</strong> YeniZamanlayiciDialog sınıfında is_editing_favorite parametresinin tanımlı olduğunu kontrol edin</li>
+</ul>
+</div>
+
+<h2>🔄 Güncelleme Geçmişi</h2>
+
+<div class="tip">
+<h3>📅 Son Güncellemeler</h3>
+<ul>
+    <li><strong class="new">Favori Sistemi:</strong> Geçmişten favori ekleme ve yönetim sistemi</li>
+    <li><strong class="new">Favori Düzenleme:</strong> Mevcut favorilerin ayarlarını değiştirme özelliği</li>
+    <li><strong class="new">Klavye Kısayolları:</strong> F, G ve ESC tuşları ile hızlı navigasyon</li>
+    <li><strong class="new">Sağ Tık Menüleri:</strong> Geçmiş ve favori listelerinde bağlam menüleri</li>
+    <li><strong class="new">Çift Tık Düzenleme:</strong> Aktif zamanlayıcıları çift tıkla düzenleme</li>
+    <li><strong class="new">Gelişmiş Veri Yönetimi:</strong> Daha güvenilir kaydetme ve yükleme sistemi</li>
+</ul>
+</div>
+
+<h2>📞 Destek</h2>
+
+<div class="tip">
+<p><strong>💡 İpucu:</strong> Bu uygulama açık kaynak kodludur. Kod içindeki yorumları inceleyerek daha detaylı bilgi alabilirsiniz.</p>
+
+<p><strong>🎯 Kullanım İpuçları:</strong></p>
+<ul>
+    <li>Sık kullandığınız zamanlayıcıları favorilere ekleyerek hızlı erişim sağlayın</li>
+    <li>Klavye kısayollarını kullanarak daha verimli çalışın</li>
+    <li>Tekrarlayan görevler için tekrar sayısı ve aralığı özelliklerini kullanın</li>
+    <li>Farklı zamanlayıcılar için farklı alarm sesleri seçerek karışıklığı önleyin</li>
+</ul>
+</div>
+
+<hr>
+<p><em>Bu dokümantasyon Zamanlayıcı Uygulaması v2.0 için hazırlanmıştır.</em></p>
+
+</body>
+</html>
