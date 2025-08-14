@@ -23,6 +23,9 @@ __pycache__/
 *.exe
 *.spec
 
+# Batch files (local utilities)
+*.bat
+
 # Temporary files
 temp.py
 
