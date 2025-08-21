@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QFont
 import os
+import datetime
 from timer_logger import record_log
 from dialog_classes import IlerlemeDialog
 
@@ -11,7 +12,7 @@ class DosyaAnaliziPenceresi(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Dosya Analizi")
-        self.resize(800, 1200)
+        self.resize(870, 1200)
         
         # Merkezi widget
         merkez_widget = QWidget()
@@ -34,6 +35,12 @@ class DosyaAnaliziPenceresi(QMainWindow):
         self.ust_klasor_dugme.clicked.connect(self.ust_klasore_git)
         self.ust_klasor_dugme.setEnabled(False)
         ust_duzen.addWidget(self.ust_klasor_dugme)
+        
+        # Dışarıya aktar düğmesi
+        self.disariya_aktar_dugme = QPushButton("Dışarıya Aktar")
+        self.disariya_aktar_dugme.clicked.connect(self.tablo_disariya_aktar)
+        self.disariya_aktar_dugme.setEnabled(False)
+        ust_duzen.addWidget(self.disariya_aktar_dugme)
         
         # Mevcut klasör etiketi
         self.mevcut_klasor_etiket = QLabel("Henüz klasör seçilmedi")
@@ -78,6 +85,7 @@ class DosyaAnaliziPenceresi(QMainWindow):
             
             is_kok_dizin = (os.path.dirname(self.mevcut_klasor) == self.mevcut_klasor)
             self.ust_klasor_dugme.setEnabled(not is_kok_dizin)
+            self.disariya_aktar_dugme.setEnabled(True)  # Export düğmesini etkinleştir
     
     def klasore_git(self, item):
         """Tabloda seçilen klasöre git"""
@@ -294,3 +302,85 @@ class DosyaAnaliziPenceresi(QMainWindow):
             font.setBold(True)
             dosya_sayisi_ogesi.setFont(font)
         self.tablo.setItem(satir, 2, dosya_sayisi_ogesi)
+    
+    def tablo_disariya_aktar(self):
+        """Tablo verilerini txt dosyasına formatlanmış olarak aktar"""
+        if not self.mevcut_klasor or self.tablo.rowCount() == 0:
+            QMessageBox.warning(self, "Uyarı", "Dışarıya aktaracak veri bulunamadı!")
+            return
+        
+        # Kayıt dosyası adını seç
+        dosya_adi, _ = QFileDialog.getSaveFileName(
+            self,
+            "Analiz Sonucunu Kaydet",
+            f"klasor_analizi_{os.path.basename(self.mevcut_klasor)}.txt",
+            "Metin Dosyaları (*.txt);;Tüm Dosyalar (*)"
+        )
+        
+        if not dosya_adi:
+            return
+        
+        try:
+            with open(dosya_adi, 'w', encoding='utf-8') as dosya:
+                # Başlık bilgileri
+                dosya.write("KLASÖR ANALİZİ RAPORU\n")
+                dosya.write("=" * 80 + "\n")
+                dosya.write(f"Analiz Tarihi: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                dosya.write(f"Analiz Edilen Klasör: {self.mevcut_klasor}\n")
+                dosya.write("=" * 80 + "\n\n")
+                
+                # Tablo başlıkları ve verilerini formatla
+                basliklar = ["Klasör Adı", "Boyut", "Dosya Sayısı"]
+                
+                # Her sütun için maksimum genişliği bul
+                sutun_genislikleri = [len(baslik) for baslik in basliklar]
+                
+                # Tablo verilerini topla ve maksimum genişlikleri hesapla
+                tablo_verileri = []
+                for satir in range(self.tablo.rowCount()):
+                    satir_verileri = []
+                    for sutun in range(self.tablo.columnCount()):
+                        item = self.tablo.item(satir, sutun)
+                        metin = item.text() if item else ""
+                        satir_verileri.append(metin)
+                        sutun_genislikleri[sutun] = max(sutun_genislikleri[sutun], len(metin))
+                    tablo_verileri.append(satir_verileri)
+                
+                # Minimum genişlikleri ayarla
+                sutun_genislikleri = [max(genislik, 20) for genislik in sutun_genislikleri]
+                
+                # Başlık satırını yaz
+                baslik_satiri = " | ".join(
+                    baslik.ljust(genislik) for baslik, genislik in zip(basliklar, sutun_genislikleri)
+                )
+                dosya.write(baslik_satiri + "\n")
+                
+                # Ayırıcı çizgi
+                ayirici = "-+-".join("-" * genislik for genislik in sutun_genislikleri)
+                dosya.write(ayirici + "\n")
+                
+                # Veri satırlarını yaz
+                for satir_verileri in tablo_verileri:
+                    veri_satiri = " | ".join(
+                        veri.ljust(genislik) for veri, genislik in zip(satir_verileri, sutun_genislikleri)
+                    )
+                    dosya.write(veri_satiri + "\n")
+                
+                # Alt bilgi
+                dosya.write("\n" + "=" * 80 + "\n")
+                dosya.write("Rapor Sonu\n")
+            
+            QMessageBox.information(
+                self, 
+                "Başarılı", 
+                f"Analiz sonucu başarıyla dışarıya aktarıldı:\n{dosya_adi}"
+            )
+            record_log(f"Klasör analizi raporu dışarıya aktarıldı: {dosya_adi}")
+            
+        except Exception as e:
+            QMessageBox.critical(
+                self, 
+                "Hata", 
+                f"Dosya kaydedilirken hata oluştu:\n{str(e)}"
+            )
+            record_log(f"Dışarıya aktarma hatası: {str(e)}", "error")
