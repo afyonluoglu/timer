@@ -635,8 +635,8 @@ class AlarmDialog(QDialog):
         if (durum == QMediaPlayer.EndOfMedia and 
             self.ses_caliniyor and 
             self.medya_oynatici):
-            # Ses bitti, 3 dakika sonra tekrar başlat (döngü)
-            QTimer.singleShot(3 * 60 * 1000, lambda: (
+            # Ses bitti, 5 dakika sonra tekrar başlat (döngü)
+            QTimer.singleShot(5 * 60 * 1000, lambda: (
                         self.medya_oynatici.setPosition(0),
                         self.medya_oynatici.play()
                     ))            

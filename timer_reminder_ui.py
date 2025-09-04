@@ -60,7 +60,7 @@ class HatirlaticiManager:
                 # Mark selected reminder as completed and handle repeats
                 hatirlatici = self.get_hatirlatici_from_sorted_list(self.uygulama.tum_hatirlaticilar_list.row(item))
                 if hatirlatici:
-        # --- EKLENDİ: Kaç dakika önce tamamlandı hesaplama ---
+                    # --- EKLENDİ: Kaç dakika önce tamamlandı hesaplama ---
                     simdi = datetime.datetime.now()
                     hatirlatici_zamani = hatirlatici.get_datetime()
                     fark = hatirlatici_zamani - simdi
@@ -85,6 +85,12 @@ class HatirlaticiManager:
                             hatirlatici.yapildi = True
                     else:
                         hatirlatici.yapildi = True
+                        # Tekrarlamayan hatırlatıcıyı listeden kaldır - Mustafa 03.09.2025
+                        if hatirlatici in self.uygulama.hatirlaticilar:
+                            self.uygulama.hatirlaticilar.remove(hatirlatici)
+                            print(f"🚩 Tekrarlamayan hatırlatıcı  '{hatirlatici.not_metni}' listeden kaldırıldı (tamamlandı olarak işaretlendi)")
+
+
                     # Clear any notification or snooze flags
                     if hasattr(hatirlatici, '_bildirim_gosterildi'):
                         delattr(hatirlatici, '_bildirim_gosterildi')

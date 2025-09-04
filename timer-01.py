@@ -435,7 +435,7 @@ class ZamanlayiciUygulamasi(QWidget):
         aktif_baslik_duzen.addStretch()
 
         self.baslat_dugme = QPushButton("⏱️ Yeni Zamanlayıcı Başlat")
-        # self.baslat_dugme.setFont(QFont("Arial", 12, QFont.Bold))
+        self.baslat_dugme.setFont(QFont("Arial", 11, QFont.Bold))
         self.baslat_dugme.setFixedHeight(40) 
         self.baslat_dugme.setStyleSheet("""
             QPushButton {
@@ -444,10 +444,11 @@ class ZamanlayiciUygulamasi(QWidget):
                 font-weight: bold;
             }
             QPushButton:hover {
-                background-color: #2746a6;  /* Hover rengi */
-                color: #ffff99;             /* Hover'da yazı rengi */
+                background-color: #75d6ff;  /* Hover rengi */
+                color: #004285;             /* Hover'da yazı rengi */
             }
         """)
+
         self.baslat_dugme.clicked.connect(self.yeni_zamanlayici_baslat)
         self.baslat_dugme.setCursor(Qt.PointingHandCursor)
         aktif_baslik_duzen.addWidget(self.baslat_dugme)
