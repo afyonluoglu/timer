@@ -1473,6 +1473,7 @@ class ZamanlayiciUygulamasi(QWidget):
                                     else:
                                         record_log(f"➖ [YÜKLE] Timer {z.id} - '{z.temel_aciklama}': Süre dolmuş, geçmişe ekleniyor", "warning")
                                         # Süre dolmuş, geçmişe ekle
+                                        show_toast(self, "Süresi Dolan Zamanlayıcı", f"{z.temel_aciklama}", duration=0)
                                         self.gecmis_listesi.append({
                                             'tarih': simdi.strftime('%d.%m.%Y %H:%M:%S'),
                                             'sure': z.dakika_ayari,
