@@ -3,12 +3,14 @@ import json
 import datetime
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QLabel, QPushButton, QComboBox, QGridLayout, QAction, QMessageBox, # QAction ve QMessageBox eklendi
-    QInputDialog, QDialog, QListWidget, QListWidgetItem, QGroupBox # Diğer potansiyel eksik widget'lar eklendi
+    QLabel, QPushButton, QComboBox, QGridLayout, QAction, QMessageBox,
+    QInputDialog, QDialog, QListWidget, QListWidgetItem, QGroupBox, QMenu,
+    QTableWidget, QTableWidgetItem, QHeaderView
 )
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import QTimer, Qt
 
+MAX_DELETE_COUNT = 15  # Maksimum silme hakkı
 
 class SudokuHucre:
     def __init__(self):
@@ -18,14 +20,19 @@ class SudokuHucre:
 
 class SudokuOyunu(QMainWindow):
     # Renk tanımlamaları
-    SABIT_RENK = "color: red; font-weight: bold;"
-    KULLANICI_RENK = "color: blue;"
-    IPUCU_RENK = "background-color: #90EE90; color: red; font-weight: bold;"
+    SABIT_RENK = "color: black; font-weight: bold;"
+    KULLANICI_RENK = "color: #4169E1;"
+    IPUCU_ARKAPLAN = "#2E8B57"  # Koyu yeşil (Sea Green)
+    IPUCU_YAZI = "color: white; font-weight: bold;"
+    HATA_ARKAPLAN = "#FFB6C1"  # Açık pembe (Light Pink)
+    SECILI_ARKAPLAN = "#60EB60"  # Açık yeşil (Light Green)
+    KULLANICI_ARKAPLAN = "#C4FF85"  # Açık yeşil-sarı
+    NORMAL_ARKAPLAN = "white"
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Sudoku")
-        self.resize(600, 700)
+        self.resize(600, 620)
         
         # Oyun değişkenleri
         self.secili_hucre = None
@@ -34,6 +41,13 @@ class SudokuOyunu(QMainWindow):
         self.puan = 0
         self.oyun_aktif = False
         self.cozum_tahtasi = None  # İpucu için çözüm tahtası
+        self.hatali_hucreler = set()  # Hatalı hücreleri takip etmek için
+        self.ipucu_hucreleri = set()  # İpucu hücrelerini takip etmek için
+        
+        # İstatistik değişkenleri
+        self.ipucu_sayisi = 0
+        self.silme_sayisi = 0
+        self.kontrol_sayisi = 0
         
         # Merkezi widget
         merkez_widget = QWidget()
@@ -59,7 +73,7 @@ class SudokuOyunu(QMainWindow):
         ust_duzen.addWidget(self.puan_label)
         
         # Yeni değişkenler ekle
-        self.silme_hakki = 5
+        self.silme_hakki = MAX_DELETE_COUNT
         self.toplam_puan = 0  # Toplam puan için yeni değişken
         
         # Silme hakkı göstergesi
@@ -85,6 +99,8 @@ class SudokuOyunu(QMainWindow):
                 buton.setFixedSize(50, 50)
                 buton.setFont(QFont('Arial', 16))
                 buton.clicked.connect(lambda checked, s=i, k=j: self.hucre_secildi(s, k))
+                buton.setContextMenuPolicy(Qt.CustomContextMenu)
+                buton.customContextMenuRequested.connect(lambda pos, s=i, k=j: self.sag_tus_menusu(s, k))
                 self.izgara.addWidget(buton, i, j)
                 satir.append(buton)
             self.hucre_butonlari.append(satir)
@@ -176,32 +192,29 @@ class SudokuOyunu(QMainWindow):
                 sayi = int(event.text())
                 self.tahta[satir][sutun].deger = sayi
                 self.hucre_butonlari[satir][sutun].setText(str(sayi))
-                temel_stil = self.normal_hucre_stili(satir, sutun)
-                self.hucre_butonlari[satir][sutun].setStyleSheet("""
-                    QPushButton {
-                        background-color: white;
-                        color: #4169E1;
-                        border: 1px solid gray;
-                        margin: %dpx %dpx %dpx %dpx;
-                    }
-                """ % (
-                    2 if satir % 3 == 0 else 0,
-                    2 if sutun % 3 == 0 else 0,
-                    2 if satir % 3 == 2 else 0,
-                    2 if sutun % 3 == 2 else 0
-                ))
+                
+                # Eğer hücre hatalı ise ve doğru sayı girildiyse hatayı temizle
+                if (satir, sutun) in self.hatali_hucreler:
+                    if sayi == self.cozum_tahtasi[satir][sutun]:
+                        self.hatali_hucreler.remove((satir, sutun))
+                
+                self.hucre_stilini_guncelle(satir, sutun)
         
         elif event.key() == Qt.Key_Delete or event.key() == Qt.Key_Backspace:
             # Hücreyi temizle
             if not self.tahta[satir][sutun].sabit and self.tahta[satir][sutun].deger != 0:
                 if self.silme_hakki > 0:
                     self.silme_hakki -= 1
+                    self.silme_sayisi += 1  # Silme sayısını artır
                     self.silme_hakki_label.setText(f"Silme Hakkı: {self.silme_hakki}")
                     self.tahta[satir][sutun].deger = 0
                     self.hucre_butonlari[satir][sutun].setText("")
-                    self.hucre_butonlari[satir][sutun].setStyleSheet(
-                        self.normal_hucre_stili(satir, sutun)
-                    )
+                    
+                    # Hatalı hücreler listesinden kaldır
+                    if (satir, sutun) in self.hatali_hucreler:
+                        self.hatali_hucreler.remove((satir, sutun))
+                    
+                    self.hucre_stilini_guncelle(satir, sutun)
                     
                     # Silme hakkı bittiyse oyunu bitir
                     if self.silme_hakki == 0:
@@ -211,44 +224,86 @@ class SudokuOyunu(QMainWindow):
 
     def hucre_secildi(self, satir, sutun):
         """Bir hücre seçildiğinde çağrılır"""
-        # Önceki seçili hücrenin stilini temizle
+        # Önceki seçili hücrenin stilini güncelle
         if self.secili_hucre:
             eski_satir, eski_sutun = self.secili_hucre
-            eski_hucre = self.tahta[eski_satir][eski_sutun]
-            eski_etiket = self.hucre_butonlari[eski_satir][eski_sutun]
-            
-            if eski_hucre.deger != 0:
-                if eski_hucre.sabit:
-                    eski_etiket.setStyleSheet(
-                        self.normal_hucre_stili(eski_satir, eski_sutun) + 
-                        "color: red; font-weight: bold;"
-                    )
-                else:
-                    eski_etiket.setStyleSheet(
-                        self.normal_hucre_stili(eski_satir, eski_sutun) + 
-                        "color: blue;"
-                    )
-            else:
-                eski_etiket.setStyleSheet(self.normal_hucre_stili(eski_satir, eski_sutun))
+            self.hucre_stilini_guncelle(eski_satir, eski_sutun)
         
-        # Yeni hücreyi seç ve belirgin yap
+        # Yeni hücreyi seç
         self.secili_hucre = (satir, sutun)
-        self.hucre_butonlari[satir][sutun].setStyleSheet(
-            self.normal_hucre_stili(satir, sutun) + 
-            "background-color: lightblue; border: 2px solid blue;"
-        )
+        self.hucre_stilini_guncelle(satir, sutun, secili=True)
     
-    def normal_hucre_stili(self, satir, sutun):
-        """Hücrenin temel stilini döndürür"""
-        return (
-            "QLabel { "
-            "background-color: white; "
-            "border: 1px solid gray; "
-            f"margin: {2 if satir % 3 == 0 else 0}px {2 if sutun % 3 == 0 else 0}px "
-            f"{2 if satir % 3 == 2 else 0}px {2 if sutun % 3 == 2 else 0}px; "
-            "padding: 0px; "
-            "} "
-        )
+    def hucre_stilini_guncelle(self, satir, sutun, secili=False):
+        """Hücrenin stilini durumuna göre günceller"""
+        buton = self.hucre_butonlari[satir][sutun]
+        hucre = self.tahta[satir][sutun]
+        
+        # Margin değerlerini hesapla
+        margin_top = 2 if satir % 3 == 0 else 0
+        margin_left = 2 if sutun % 3 == 0 else 0
+        margin_bottom = 2 if satir % 3 == 2 else 0
+        margin_right = 2 if sutun % 3 == 2 else 0
+        
+        # Öncelik sırası: İpucu > Hatalı > Seçili > Normal
+        if (satir, sutun) in self.ipucu_hucreleri:
+            # İpucu hücreleri - koyu yeşil arkaplan, beyaz yazı
+            stil = f"""
+                QPushButton {{
+                    background-color: {self.IPUCU_ARKAPLAN};
+                    {self.IPUCU_YAZI}
+                    border: {'2px solid blue' if secili else '1px solid gray'};
+                    margin: {margin_top}px {margin_left}px {margin_bottom}px {margin_right}px;
+                }}
+            """
+        elif (satir, sutun) in self.hatali_hucreler:
+            # Hatalı hücreler - pembe arkaplan
+            stil = f"""
+                QPushButton {{
+                    background-color: {self.HATA_ARKAPLAN};
+                    {self.KULLANICI_RENK}
+                    border: {'2px solid blue' if secili else '1px solid gray'};
+                    margin: {margin_top}px {margin_left}px {margin_bottom}px {margin_right}px;
+                }}
+            """
+        elif secili:
+            # Seçili hücre - açık yeşil arkaplan
+            if hucre.sabit:
+                renk = self.SABIT_RENK
+            elif hucre.deger != 0:
+                renk = self.KULLANICI_RENK
+            else:
+                renk = ""
+            
+            stil = f"""
+                QPushButton {{
+                    background-color: {self.SECILI_ARKAPLAN};
+                    {renk}
+                    border: 2px solid blue;
+                    margin: {margin_top}px {margin_left}px {margin_bottom}px {margin_right}px;
+                }}
+            """
+        else:
+            # Normal hücre
+            if hucre.sabit:
+                arkaplan = self.NORMAL_ARKAPLAN
+                renk = self.SABIT_RENK
+            elif hucre.deger != 0:
+                arkaplan = self.KULLANICI_ARKAPLAN
+                renk = self.KULLANICI_RENK
+            else:
+                arkaplan = self.NORMAL_ARKAPLAN
+                renk = ""
+            
+            stil = f"""
+                QPushButton {{
+                    background-color: {arkaplan};
+                    {renk}
+                    border: 1px solid gray;
+                    margin: {margin_top}px {margin_left}px {margin_bottom}px {margin_right}px;
+                }}
+            """
+        
+        buton.setStyleSheet(stil)
     
     def yeni_oyun(self, puan_sifirla=True):
         """Yeni oyun başlat"""
@@ -258,6 +313,15 @@ class SudokuOyunu(QMainWindow):
                 self.tahta[i][j] = SudokuHucre()
                 self.hucre_butonlari[i][j].setText("")
                 self.hucre_butonlari[i][j].setStyleSheet(self.normal_hucre_stili(i, j))
+        
+        # Hata ve ipucu listelerini temizle
+        self.hatali_hucreler.clear()
+        self.ipucu_hucreleri.clear()
+        
+        # İstatistikleri sıfırla
+        self.ipucu_sayisi = 0
+        self.silme_sayisi = 0
+        self.kontrol_sayisi = 0
         
         # Yeni oyun oluştur
         self.tahta = self.sudoku_olustur(self.zorluk)
@@ -273,13 +337,13 @@ class SudokuOyunu(QMainWindow):
         
         # Puanı ayarla
         if puan_sifirla:
-            self.puan = 500  # Başlangıç puanı 250 olarak değiştirildi
+            self.puan = 500
             self.toplam_puan = 0
             self.toplam_puan_label.setText("Toplam Puan: 0")
-            self.silme_hakki = 5
+            self.silme_hakki = MAX_DELETE_COUNT
             self.silme_hakki_label.setText(f"Silme Hakkı: {self.silme_hakki}")
         else:
-            self.puan = 500  # Yeni oyun için başlangıç puanı 250
+            self.puan = 500
         
         self.puan_label.setText(f"Puan: {self.puan}")
     
@@ -397,9 +461,10 @@ class SudokuOyunu(QMainWindow):
                         ))
                     else:
                         # Kullanıcının girdiği sayılar açık mavi
+                        # MUSTAFA 13.11.2025
                         buton.setStyleSheet("""
                             QPushButton {
-                                background-color: white;
+                                background-color: #C4FF85; 
                                 color: #4169E1;  /* Royal Blue */
                                 border: 1px solid gray;
                                 margin: %dpx %dpx %dpx %dpx;
@@ -439,6 +504,7 @@ class SudokuOyunu(QMainWindow):
     
     def cozumu_kontrol_et(self):
         """Mevcut durumu kontrol et"""
+        
         bos_hucre_var = False
         hatali_hucreler = []
         
@@ -452,21 +518,14 @@ class SudokuOyunu(QMainWindow):
                         hatali_hucreler.append((i, j))
         
         if hatali_hucreler:
+            self.kontrol_sayisi += 1  # sadece "Hatalı hücreler varsa" Kontrol sayısını artır
+
+            # Hatalı hücreleri kaydet
+            self.hatali_hucreler = set(hatali_hucreler)
+            
             # Hatalı hücreleri işaretle
             for satir, sutun in hatali_hucreler:
-                self.hucre_butonlari[satir][sutun].setStyleSheet("""
-                    QPushButton {
-                        background-color: #ffcccc;
-                        color: #4169E1;
-                        border: 1px solid gray;
-                        margin: %dpx %dpx %dpx %dpx;
-                    }
-                """ % (
-                    2 if satir % 3 == 0 else 0,
-                    2 if sutun % 3 == 0 else 0,
-                    2 if satir % 3 == 2 else 0,
-                    2 if sutun % 3 == 2 else 0
-                ))
+                self.hucre_stilini_guncelle(satir, sutun)
             
             # Hata mesajı göster
             hata_konumlari = ", ".join([f"({s+1},{k+1})" for s, k in hatali_hucreler])
@@ -474,11 +533,8 @@ class SudokuOyunu(QMainWindow):
                 self, 
                 "Hatalı Sayılar", 
                 f"Şu konumlardaki sayılar hatalı:\n{hata_konumlari}\n\n" +
-                "(Hatalı hücreler kırmızı arka planla işaretlendi)"
+                "(Hatalı hücreler pembe arka planla işaretlendi)"
             )
-            
-            # 2 saniye sonra hatalı hücrelerin arka planını normale döndür
-            QTimer.singleShot(2000, self.hatalilari_temizle)
             return
         
         if bos_hucre_var:
@@ -486,58 +542,215 @@ class SudokuOyunu(QMainWindow):
             return
         
         # Tüm hücreler dolu ve doğruysa
+        self.oyun_aktif = False
+        self.timer.stop()
+        
         gecen_sure = int((datetime.datetime.now() - self.baslangic_zamani).total_seconds())
         self.toplam_puan += self.puan
         self.toplam_puan_label.setText(f"Toplam Puan: {self.toplam_puan}")
         
-        cevap = QMessageBox.question(
-            self,
-            "Tebrikler!",
-            f"Sudoku'yu başarıyla çözdünüz!\nPuan: {self.puan}\nYeni oyuna devam etmek ister misiniz?",
-            QMessageBox.Yes | QMessageBox.No
-        )
+        # Skor tablosuna girip girmediğini kontrol et
+        skor_tablosuna_girebilir_mi = self.skor_tablosuna_girebilir_mi_kontrol(self.toplam_puan)
         
-        if cevap == QMessageBox.Yes:
-            self.silme_hakki = 5
-            self.silme_hakki_label.setText(f"Silme Hakkı: {self.silme_hakki}")
-            self.yeni_oyun(puan_sifirla=False)
+        if skor_tablosuna_girebilir_mi:
+            # İsim al ve skoru kaydet
+            isim, ok = QInputDialog.getText(
+                self, 
+                "Tebrikler!", 
+                f"Sudoku'yu başarıyla çözdünüz!\n"
+                f"Puan: {self.puan}\n"
+                f"Toplam Puan: {self.toplam_puan}\n"
+                f"Süre: {gecen_sure // 60:02d}:{gecen_sure % 60:02d}\n"
+                f"İpucu: {self.ipucu_sayisi}, Silme: {self.silme_sayisi}, Kontrol: {self.kontrol_sayisi}\n\n"
+                f"Skorunuz skor tablosuna girmeye hak kazandı!\n"
+                f"İsminizi girin:"
+            )
+            
+            if ok and isim.strip():
+                self.puan_kaydet(isim.strip(), self.toplam_puan, gecen_sure)
+                
+                # Skor tablosunu göster
+                self.puan_tablosunu_goster()
+                
+                # Yeni oyun sorusu
+                cevap = QMessageBox.question(
+                    self,
+                    "Yeni Oyun",
+                    "Yeni oyuna devam etmek ister misiniz?",
+                    QMessageBox.Yes | QMessageBox.No
+                )
+                
+                if cevap == QMessageBox.Yes:
+                    self.silme_hakki = MAX_DELETE_COUNT
+                    self.silme_hakki_label.setText(f"Silme Hakkı: {self.silme_hakki}")
+                    self.yeni_oyun(puan_sifirla=False)
+            else:
+                # İsim girilmedi, sadece tebrik mesajı
+                cevap = QMessageBox.question(
+                    self,
+                    "Tebrikler!",
+                    f"Sudoku'yu başarıyla çözdünüz!\n"
+                    f"Puan: {self.puan}\n"
+                    f"Toplam Puan: {self.toplam_puan}\n\n"
+                    f"Yeni oyuna devam etmek ister misiniz?",
+                    QMessageBox.Yes | QMessageBox.No
+                )
+                
+                if cevap == QMessageBox.Yes:
+                    self.silme_hakki = MAX_DELETE_COUNT
+                    self.silme_hakki_label.setText(f"Silme Hakkı: {self.silme_hakki}")
+                    self.yeni_oyun(puan_sifirla=False)
         else:
-            self.oyun_bitti("Tebrikler! Oyunu başarıyla tamamladınız.")
+            # Skor tablosuna giremedi
+            cevap = QMessageBox.question(
+                self,
+                "Tebrikler!",
+                f"Sudoku'yu başarıyla çözdünüz!\n"
+                f"Puan: {self.puan}\n"
+                f"Toplam Puan: {self.toplam_puan}\n"
+                f"Süre: {gecen_sure // 60:02d}:{gecen_sure % 60:02d}\n"
+                f"İpucu: {self.ipucu_sayisi}, Silme: {self.silme_sayisi}, Kontrol: {self.kontrol_sayisi}\n\n"
+                f"Yeni oyuna devam etmek ister misiniz?",
+                QMessageBox.Yes | QMessageBox.No
+            )
+            
+            if cevap == QMessageBox.Yes:
+                self.silme_hakki = MAX_DELETE_COUNT
+                self.silme_hakki_label.setText(f"Silme Hakkı: {self.silme_hakki}")
+                self.yeni_oyun(puan_sifirla=False)
+    
+    def skor_tablosuna_girebilir_mi_kontrol(self, yeni_puan):
+        """Yeni puanın skor tablosuna girip girmeyeceğini kontrol et"""
+        try:
+            puan_dosyasi = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sudoku_puanlar.json")
+            
+            puanlar = {"Kolay": [], "Orta": [], "Zor": []}
+            if os.path.exists(puan_dosyasi):
+                with open(puan_dosyasi, 'r', encoding='utf-8') as f:
+                    puanlar = json.load(f)
+            
+            zorluk_puanlari = puanlar.get(self.zorluk, [])
+            
+            # Eğer 10'dan az kayıt varsa direkt girebilir
+            if len(zorluk_puanlari) < 10:
+                return True
+            
+            # En düşük skoru bul
+            en_dusuk_skor = min(zorluk_puanlari, key=lambda x: x['puan'])
+            
+            # Yeni puan en düşük skordan yüksekse girebilir
+            return yeni_puan > en_dusuk_skor['puan']
+            
+        except Exception:
+            # Hata durumunda her zaman kaydetmeye izin ver
+            return True
 
-    def hatalilari_temizle(self):
-        """Hatalı hücrelerin arka planını normale döndür"""
+    def ipucu_goster(self):
+        """Rastgele bir boş hücreye doğru sayıyı yerleştir"""
+        if not self.oyun_aktif or not self.cozum_tahtasi:
+            return
+        
+        if self.puan <= 10:
+            QMessageBox.warning(self, "Uyarı", "Puanınız ipucu için yetersiz!")
+            return
+        
+        # Boş hücreleri bul
+        bos_hucreler = []
         for i in range(9):
             for j in range(9):
-                if not self.tahta[i][j].sabit:
-                    if self.tahta[i][j].deger != 0:
-                        self.hucre_butonlari[i][j].setStyleSheet("""
-                            QPushButton {
-                                background-color: white;
-                                color: #4169E1;
-                                border: 1px solid gray;
-                                margin: %dpx %dpx %dpx %dpx;
-                            }
-                        """ % (
-                            2 if i % 3 == 0 else 0,
-                            2 if j % 3 == 0 else 0,
-                            2 if i % 3 == 2 else 0,
-                            2 if j % 3 == 2 else 0
-                        ))
-                    else:
-                        self.hucre_butonlari[i][j].setStyleSheet("""
-                            QPushButton {
-                                background-color: white;
-                                border: 1px solid gray;
-                                margin: %dpx %dpx %dpx %dpx;
-                            }
-                        """ % (
-                            2 if i % 3 == 0 else 0,
-                            2 if j % 3 == 0 else 0,
-                            2 if i % 3 == 2 else 0,
-                            2 if j % 3 == 2 else 0
-                        ))
+                if self.tahta[i][j].deger == 0:
+                    bos_hucreler.append((i, j))
+        
+        if not bos_hucreler:
+            QMessageBox.information(self, "İpucu", "Tüm hücreler dolu!")
+            return
+        
+        # Rastgele bir boş hücre seç
+        import random
+        satir, sutun = random.choice(bos_hucreler)
+        
+        # Doğru sayıyı yerleştir
+        dogru_sayi = self.cozum_tahtasi[satir][sutun]
+        self.tahta[satir][sutun].deger = dogru_sayi
+        self.tahta[satir][sutun].sabit = True
+        
+        # İpucu hücresini kaydet ve sayacı artır
+        self.ipucu_hucreleri.add((satir, sutun))
+        self.ipucu_sayisi += 1
+        
+        # Hücreyi güncelle
+        buton = self.hucre_butonlari[satir][sutun]
+        buton.setText(str(dogru_sayi))
+        self.hucre_stilini_guncelle(satir, sutun)
+        
+        # Puanı güncelle
+        self.puan = max(0, self.puan - 10)
+        self.puan_label.setText(f"Puan: {self.puan}")
+
+    def oyun_bitti(self, mesaj):
+        """Oyunu bitir ve puan tablosuna girip girmediğini kontrol et"""
+        self.oyun_aktif = False
+        self.timer.stop()
+        
+        # İsim iste
+        isim, ok = QInputDialog.getText(self, "Oyun Bitti!", 
+            f"{mesaj}\nToplam Puanınız: {self.toplam_puan}\nİsminizi girin:")
+        
+        if ok and isim:
+            self.puan_kaydet(isim, self.toplam_puan)
+            self.puan_tablosunu_goster()
+            
+    def puan_kaydet(self, isim, puan, sure=None):
+        """Puanı kaydet ve en iyi 10 skoru tut"""
+        puan_dosyasi = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
+                                  "sudoku_puanlar.json")
+        
+        puanlar = {"Kolay": [], "Orta": [], "Zor": []}
+        if os.path.exists(puan_dosyasi):
+            with open(puan_dosyasi, 'r', encoding='utf-8') as f:
+                puanlar = json.load(f)
+        
+        # Süre belirtilmediyse hesapla
+        if sure is None and self.baslangic_zamani:
+            sure = int((datetime.datetime.now() - self.baslangic_zamani).total_seconds())
+        elif sure is None:
+            sure = 0
+        
+        # Yeni puanı ekle
+        puanlar[self.zorluk].append({
+            'isim': isim,
+            'puan': puan,
+            'sure': sure,
+            'ipucu': self.ipucu_sayisi,
+            'silme': self.silme_sayisi,
+            'kontrol': self.kontrol_sayisi,
+            'tarih': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        })
+        
+        # Puana göre sırala (yüksekten düşüğe, eşit puanlarda süreye göre küçükten büyüğe) ve en iyi 10'u al
+        puanlar[self.zorluk] = sorted(
+            puanlar[self.zorluk], 
+            key=lambda x: (-x['puan'], x['sure'])
+        )[:10]
+        
+        # Puanları kaydet
+        with open(puan_dosyasi, 'w', encoding='utf-8') as f:
+            json.dump(puanlar, f, ensure_ascii=False, indent=2)
+    
+    def normal_hucre_stili(self, satir, sutun):
+        """Hücrenin temel stilini döndürür"""
+        return (
+            "QPushButton { "
+            "background-color: white; "
+            "border: 1px solid gray; "
+            f"margin: {2 if satir % 3 == 0 else 0}px {2 if sutun % 3 == 0 else 0}px "
+            f"{2 if satir % 3 == 2 else 0}px {2 if sutun % 3 == 2 else 0}px; "
+            "padding: 0px; "
+            "} "
+        )
     
     def zorluk_degisti(self, yeni_zorluk):
+        """Zorluk seviyesi değiştiğinde çağrılır"""
         if self.oyun_aktif:
             cevap = QMessageBox.question(
                 self,
@@ -553,7 +766,7 @@ class SudokuOyunu(QMainWindow):
                 self.zorluk_combo.setCurrentText(self.zorluk)
     
     def puan_tablosunu_goster(self):
-        """Puan tablosunu göster"""
+        """Puan tablosunu tablo formatında göster"""
         try:
             # Puan tablosu dosyası
             puan_dosyasi = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sudoku_puanlar.json")
@@ -568,33 +781,63 @@ class SudokuOyunu(QMainWindow):
             dialog = QDialog(self)
             dialog.setWindowTitle("Puan Tablosu")
             dialog.setModal(True)
-            dialog.resize(400, 500)
+            dialog.resize(900, 1300)
             
             # Düzen
             duzen = QVBoxLayout()
             
-            # Zorluk seviyeleri için sekmeler
+            # Zorluk seviyeleri için tablolar
             for zorluk in ["Kolay", "Orta", "Zor"]:
                 # Grup kutusu
                 grup = QGroupBox(zorluk)
                 grup_duzen = QVBoxLayout()
                 
-                # Puan listesi
-                liste = QListWidget()
-                zorluk_puanlari = sorted(puanlar.get(zorluk, []), 
-                                       key=lambda x: (-x['puan'], x['sure']))  # Puana göre sırala
+                # Tablo oluştur
+                tablo = QTableWidget()
+                tablo.setColumnCount(7)
+                tablo.setHorizontalHeaderLabels(["Sıra", "İsim", "Puan", "Süre", "İpucu", "Silme", "Kontrol"])
+                tablo.setContextMenuPolicy(Qt.CustomContextMenu)
+                tablo.customContextMenuRequested.connect(
+                    lambda pos, z=zorluk, t=tablo: self.tablo_sag_tus_menusu(pos, z, t)
+                )
                 
-                for i, kayit in enumerate(zorluk_puanlari[:10], 1):  # İlk 10
-                    sure = kayit['sure']  # saniye cinsinden
+                # Zorluk seviyesine göre puanları al ve sırala
+                zorluk_puanlari = sorted(
+                    puanlar.get(zorluk, []), 
+                    key=lambda x: (-x['puan'], x['sure'])
+                )[:10]
+                
+                tablo.setRowCount(len(zorluk_puanlari))              
+                
+                # Tabloyu doldur
+                for i, kayit in enumerate(zorluk_puanlari):
+                    # Eski kayıtlarda eksik alanlar olabilir
+                    ipucu = kayit.get('ipucu', 0)
+                    silme = kayit.get('silme', 0)
+                    kontrol = kayit.get('kontrol', 0)
+                    
+                    sure = kayit['sure']
                     dakika = sure // 60
                     saniye = sure % 60
-                    item = QListWidgetItem(
-                        f"{i}. {kayit['isim']} - {kayit['puan']} puan "
-                        f"(Süre: {dakika:02d}:{saniye:02d})"
-                    )
-                    liste.addItem(item)
+                    
+                    tablo.setItem(i, 0, QTableWidgetItem(str(i + 1)))
+                    tablo.setItem(i, 1, QTableWidgetItem(kayit['isim']))
+                    tablo.setItem(i, 2, QTableWidgetItem(str(kayit['puan'])))
+                    tablo.setItem(i, 3, QTableWidgetItem(f"{dakika:02d}:{saniye:02d}"))
+                    tablo.setItem(i, 4, QTableWidgetItem(str(ipucu)))
+                    tablo.setItem(i, 5, QTableWidgetItem(str(silme)))
+                    tablo.setItem(i, 6, QTableWidgetItem(str(kontrol)))
                 
-                grup_duzen.addWidget(liste)
+                # Tablo dolduırulduktan sonra satır yüksekliğini ayarla
+                for i in range(tablo.rowCount()):
+                    tablo.setRowHeight(i, 20)   
+
+                # Tablo ayarları
+                tablo.setEditTriggers(QTableWidget.NoEditTriggers)
+                tablo.setSelectionBehavior(QTableWidget.SelectRows)
+                tablo.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+                
+                grup_duzen.addWidget(tablo)
                 grup.setLayout(grup_duzen)
                 duzen.addWidget(grup)
             
@@ -609,7 +852,70 @@ class SudokuOyunu(QMainWindow):
         except Exception as e:
             QMessageBox.warning(self, "Hata", f"Puan tablosu gösterilirken hata oluştu: {str(e)}")
     
+    def tablo_sag_tus_menusu(self, pos, zorluk, tablo):
+        """Puan tablosunda sağ tıklama menüsü"""
+        # Seçili satırı al
+        secili_satir = tablo.currentRow()
+        if secili_satir < 0:
+            return
+        
+        # Context menü oluştur
+        menu = QMenu(self)
+        sil_action = menu.addAction("Sil")
+        
+        action = menu.exec_(tablo.viewport().mapToGlobal(pos))
+        
+        if action == sil_action:
+            # Onay iste
+            cevap = QMessageBox.question(
+                self,
+                "Silme Onayı",
+                f"{secili_satir + 1}. sıradaki kaydı silmek istediğinizden emin misiniz?",
+                QMessageBox.Yes | QMessageBox.No
+            )
+            
+            if cevap == QMessageBox.Yes:
+                self.puan_kaydi_sil(zorluk, secili_satir)
+                # Tabloyu yenile
+                tablo.parent().parent().close()  # Dialog'u kapat
+                self.puan_tablosunu_goster()  # Yeniden aç
+    
+    def puan_kaydi_sil(self, zorluk, satir_index):
+        """Puan tablosundan belirtilen kaydı sil"""
+        try:
+            puan_dosyasi = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sudoku_puanlar.json")
+            
+            puanlar = {"Kolay": [], "Orta": [], "Zor": []}
+            if os.path.exists(puan_dosyasi):
+                with open(puan_dosyasi, 'r', encoding='utf-8') as f:
+                    puanlar = json.load(f)
+            
+            # Zorluk seviyesine göre puanları al ve sırala
+            zorluk_puanlari = sorted(
+                puanlar.get(zorluk, []), 
+                key=lambda x: (-x['puan'], x['sure'])
+            )
+            
+            # Belirtilen satırı sil
+            if 0 <= satir_index < len(zorluk_puanlari):
+                silinen = zorluk_puanlari.pop(satir_index)
+                
+                # Güncellenmiş listeyi kaydet
+                puanlar[zorluk] = zorluk_puanlari
+                
+                with open(puan_dosyasi, 'w', encoding='utf-8') as f:
+                    json.dump(puanlar, f, ensure_ascii=False, indent=2)
+                
+                QMessageBox.information(
+                    self, 
+                    "Başarılı", 
+                    f"{silinen['isim']} kullanıcısının kaydı silindi."
+                )
+        except Exception as e:
+            QMessageBox.warning(self, "Hata", f"Kayıt silinirken hata oluştu: {str(e)}")
+    
     def yardim_goster(self):
+        """Yardım mesajını göster"""
         yardim_metni = """
         <h2>Sudoku Nasıl Oynanır?</h2>
         <p>Sudoku, 9x9'luk bir ızgarada oynanan bir bulmaca oyunudur.</p>
@@ -647,96 +953,99 @@ class SudokuOyunu(QMainWindow):
         
         <h3>Renkler:</h3>
         <ul>
-            <li>Kırmızı sayılar: Bilgisayar tarafından yerleştirilen veya ipucu ile doldurulan sayılar</li>
+            <li>Siyah sayılar: Başlangıçta verilen sabit sayılar</li>
             <li>Mavi sayılar: Oyuncu tarafından girilen sayılar</li>
-            <li>Yeşil arka plan: İpucu ile doldurulan hücreler</li>
+            <li>Koyu yeşil arka plan: İpucu ile doldurulan hücreler (kalıcı)</li>
+            <li>Pembe arka plan: Hatalı sayılar (düzeltilene kadar kalıcı)</li>
+            <li>Açık yeşil arka plan: Seçili hücre</li>
         </ul>
         """
         
         QMessageBox.information(self, "Nasıl Oynanır?", yardim_metni)
     
-    def ipucu_goster(self):
-        """Rastgele bir boş hücreye doğru sayıyı yerleştir"""
-        if not self.oyun_aktif or not self.cozum_tahtasi:
+    def sag_tus_menusu(self, satir, sutun):
+        """Sağ tıklama ile olası sayıları gösteren menü"""
+        if not self.oyun_aktif:
             return
         
-        if self.puan <= 10:
-            QMessageBox.warning(self, "Uyarı", "Puanınız ipucu için yetersiz!")
+        # Sabit hücrelere menü gösterme
+        if self.tahta[satir][sutun].sabit:
             return
         
-        # Boş hücreleri bul
-        bos_hucreler = []
-        for i in range(9):
-            for j in range(9):
-                if self.tahta[i][j].deger == 0:
-                    bos_hucreler.append((i, j))
+        # Olası sayıları hesapla
+        olasi_sayilar = self.olasi_sayilari_bul(satir, sutun)
         
-        if not bos_hucreler:
-            QMessageBox.information(self, "İpucu", "Tüm hücreler dolu!")
+        if not olasi_sayilar:
+            QMessageBox.information(self, "Bilgi", "Bu hücreye yerleştirilebilecek uygun sayı yok!")
             return
         
-        # Rastgele bir boş hücre seç
-        import random
-        satir, sutun = random.choice(bos_hucreler)
-        
-        # Doğru sayıyı yerleştir
-        dogru_sayi = self.cozum_tahtasi[satir][sutun]
-        self.tahta[satir][sutun].deger = dogru_sayi
-        self.tahta[satir][sutun].sabit = True
-        
-        # Hücreyi güncelle ve ipucu rengini ayarla
-        buton = self.hucre_butonlari[satir][sutun]
-        buton.setText(str(dogru_sayi))
-        buton.setStyleSheet("""
-            QPushButton {
-                background-color: #90EE90;
-                color: red;
+        # Context menü oluştur
+        menu = QMenu(self)
+        menu.setStyleSheet("""
+            QMenu {
+                background-color: white;
+                border: 2px solid #4169E1;
+                font-size: 14pt;
                 font-weight: bold;
-                border: 1px solid gray;
-                margin: %dpx %dpx %dpx %dpx;
             }
-        """ % (
-            2 if satir % 3 == 0 else 0,
-            2 if sutun % 3 == 0 else 0,
-            2 if satir % 3 == 2 else 0,
-            2 if sutun % 3 == 2 else 0
-        ))
+            QMenu::item {
+                padding: 8px 25px;
+                color: #4169E1;
+            }
+            QMenu::item:selected {
+                background-color: #90EE90;
+            }
+        """)
         
-        # Puanı güncelle
-        self.puan = max(0, self.puan - 10)
-        self.puan_label.setText(f"Puan: {self.puan}")
-
-    def oyun_bitti(self, mesaj):
-        """Oyunu bitir ve puan tablosuna girip giremediğini kontrol et"""
-        self.oyun_aktif = False
-        self.timer.stop()
+        # Her olası sayı için bir action ekle
+        for sayi in sorted(olasi_sayilar):
+            action = menu.addAction(str(sayi))
+            action.triggered.connect(lambda checked, s=sayi: self.sayi_sec(satir, sutun, s))
         
-        # İsim iste
-        isim, ok = QInputDialog.getText(self, "Oyun Bitti!", 
-            f"{mesaj}\nToplam Puanınız: {self.toplam_puan}\nİsminizi girin:")
+        # Menüyü butonun konumunda göster
+        buton = self.hucre_butonlari[satir][sutun]
+        menu.exec_(buton.mapToGlobal(buton.rect().bottomLeft()))
+    
+    def olasi_sayilari_bul(self, satir, sutun):
+        """Bir hücreye yerleştirilebilecek olası sayıları bul"""
+        olasi_sayilar = set(range(1, 10))
         
-        if ok and isim:
-            self.puan_kaydet(isim, self.toplam_puan)
-            self.puan_tablosunu_goster()
-
-    def puan_kaydet(self, isim, puan):
-        """Puanı kaydet"""
-        puan_dosyasi = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
-                                  "sudoku_puanlar.json")
+        # Aynı satırdaki sayıları çıkar
+        for j in range(9):
+            if self.tahta[satir][j].deger != 0:
+                olasi_sayilar.discard(self.tahta[satir][j].deger)
         
-        puanlar = {"Kolay": [], "Orta": [], "Zor": []}
-        if os.path.exists(puan_dosyasi):
-            with open(puan_dosyasi, 'r', encoding='utf-8') as f:
-                puanlar = json.load(f)
+        # Aynı sütundaki sayıları çıkar
+        for i in range(9):
+            if self.tahta[i][sutun].deger != 0:
+                olasi_sayilar.discard(self.tahta[i][sutun].deger)
         
-        # Yeni puanı ekle
-        puanlar[self.zorluk].append({
-            'isim': isim,
-            'puan': puan,
-            'sure': int((datetime.datetime.now() - self.baslangic_zamani).total_seconds()),
-            'tarih': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        })
+        # Aynı 3x3 bölgedeki sayıları çıkar
+        kutu_satir = (satir // 3) * 3
+        kutu_sutun = (sutun // 3) * 3
+        for i in range(kutu_satir, kutu_satir + 3):
+            for j in range(kutu_sutun, kutu_sutun + 3):
+                if self.tahta[i][j].deger != 0:
+                    olasi_sayilar.discard(self.tahta[i][j].deger)
         
-        # Puanları kaydet
-        with open(puan_dosyasi, 'w', encoding='utf-8') as f:
-            json.dump(puanlar, f, ensure_ascii=False, indent=2)
+        return olasi_sayilar
+    
+    def sayi_sec(self, satir, sutun, sayi):
+        """Menüden seçilen sayıyı hücreye yerleştir"""
+        if not self.oyun_aktif or self.tahta[satir][sutun].sabit:
+            return
+        
+        # Sayıyı yerleştir
+        self.tahta[satir][sutun].deger = sayi
+        self.hucre_butonlari[satir][sutun].setText(str(sayi))
+        
+        # Eğer hücre hatalı listesindeyse ve doğru sayı girildiyse hatayı temizle
+        if (satir, sutun) in self.hatali_hucreler:
+            if sayi == self.cozum_tahtasi[satir][sutun]:
+                self.hatali_hucreler.remove((satir, sutun))
+        
+        # Hücreyi seç ve stilini güncelle
+        self.secili_hucre = (satir, sutun)
+        self.hucre_stilini_guncelle(satir, sutun, secili=True)
+    
+    # ---------------------------------

@@ -99,7 +99,7 @@ class HatirlaticiManager:
                     # Refresh lists and save settings
                     self.hatirlatici_listelerini_guncelle()
                     self.uygulama.ayarlari_kaydet()
-                    record_log(f"🔔 Hatırlatıcı '{hatirlatici.not_metni}', {erken} , 'tamamlandı' olarak işaretlendi")                    
+                    record_log(f"🔔 Hatırlatıcı '{hatirlatici.not_metni}', {erken}, 'tamamlandı' olarak işaretlendi")                    
             elif action == duzenle_action:
                 # Sıralı listeden gerçek hatırlatıcıyı bul
                 hatirlatici = self.get_hatirlatici_from_sorted_list(self.uygulama.tum_hatirlaticilar_list.row(item))
