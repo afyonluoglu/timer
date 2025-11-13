@@ -531,7 +531,7 @@ class SudokuOyunu(QMainWindow):
             hata_konumlari = ", ".join([f"({s+1},{k+1})" for s, k in hatali_hucreler])
             QMessageBox.warning(
                 self, 
-                "Hatalı Sayılar", 
+                "Bulunan Hatalı Sayılar", 
                 f"Şu konumlardaki sayılar hatalı:\n{hata_konumlari}\n\n" +
                 "(Hatalı hücreler pembe arka planla işaretlendi)"
             )
@@ -819,10 +819,18 @@ class SudokuOyunu(QMainWindow):
                     sure = kayit['sure']
                     dakika = sure // 60
                     saniye = sure % 60
-                    
-                    tablo.setItem(i, 0, QTableWidgetItem(str(i + 1)))
+
+                    item = QTableWidgetItem(str(i + 1))
+                    item.setTextAlignment(Qt.AlignCenter)
+                    tablo.setItem(i, 0, item)                    
+
                     tablo.setItem(i, 1, QTableWidgetItem(kayit['isim']))
-                    tablo.setItem(i, 2, QTableWidgetItem(str(kayit['puan'])))
+
+                    item = QTableWidgetItem(str(kayit['puan']))
+                    item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+                    tablo.setItem(i, 2, item)                    
+                    # tablo.setItem(i, 2, QTableWidgetItem(str(kayit['puan'])))
+                    
                     tablo.setItem(i, 3, QTableWidgetItem(f"{dakika:02d}:{saniye:02d}"))
                     tablo.setItem(i, 4, QTableWidgetItem(str(ipucu)))
                     tablo.setItem(i, 5, QTableWidgetItem(str(silme)))
@@ -832,10 +840,18 @@ class SudokuOyunu(QMainWindow):
                 for i in range(tablo.rowCount()):
                     tablo.setRowHeight(i, 20)   
 
+                tablo.setColumnWidth(0, 15)   # Sıra
+                tablo.setColumnWidth(1, 200)  # İsim
+                tablo.setColumnWidth(2, 80)   # Puan
+                tablo.setColumnWidth(3, 90)   # Süre
+                tablo.setColumnWidth(4, 60)   # İpucu
+                tablo.setColumnWidth(5, 60)   # Silme
+                tablo.setColumnWidth(6, 70)   # Kontrol
+
                 # Tablo ayarları
                 tablo.setEditTriggers(QTableWidget.NoEditTriggers)
                 tablo.setSelectionBehavior(QTableWidget.SelectRows)
-                tablo.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+                # tablo.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
                 
                 grup_duzen.addWidget(tablo)
                 grup.setLayout(grup_duzen)
@@ -932,7 +948,7 @@ class SudokuOyunu(QMainWindow):
             <li>Her oyun 500 puanla başlar</li>
             <li>Her 30 saniyede 1 puan düşer</li>
             <li>Her ipucu kullanımı 10 puan düşürür</li>
-            <li>Oyuncunun 5 silme hakkı vardır</li>
+            <li>Oyuncunun 15 silme hakkı vardır</li>
             <li>Silme hakkı biterse oyun sonlanır</li>
             <li>Başarılı oyun bitiminde puanlar toplanır ve yeni oyuna devam edilebilir</li>
         </ul>
