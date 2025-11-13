@@ -795,7 +795,7 @@ class SudokuOyunu(QMainWindow):
                 # Tablo oluştur
                 tablo = QTableWidget()
                 tablo.setColumnCount(7)
-                tablo.setHorizontalHeaderLabels(["Sıra", "Tarih", "İsim", "Puan", "Süre", "İpucu", "Silme", "Kontrol"])
+                tablo.setHorizontalHeaderLabels(["Tarih", "İsim", "Puan", "Süre", "İpucu", "Silme", "Kontrol"])
                 tablo.setContextMenuPolicy(Qt.CustomContextMenu)
                 tablo.customContextMenuRequested.connect(
                     lambda pos, z=zorluk, t=tablo: self.tablo_sag_tus_menusu(pos, z, t)
@@ -821,35 +821,33 @@ class SudokuOyunu(QMainWindow):
                     dakika = sure // 60
                     saniye = sure % 60
 
-                    item = QTableWidgetItem(str(i + 1))
-                    item.setTextAlignment(Qt.AlignCenter)
-                    tablo.setItem(i, 0, item)                    
+                    # item = QTableWidgetItem(str(i + 1))
+                    # item.setTextAlignment(Qt.AlignCenter)
+                    # tablo.setItem(i, 0, item)                    
 
-                    tablo.setItem(i, 1, QTableWidgetItem(str(tarih)))
-                    tablo.setItem(i, 2, QTableWidgetItem(kayit['isim']))
+                    tablo.setItem(i, 0, QTableWidgetItem(str(tarih)))
+                    tablo.setItem(i, 1, QTableWidgetItem(kayit['isim']))
 
                     item = QTableWidgetItem(str(kayit['puan']))
                     item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-                    tablo.setItem(i, 3, item)                    
-                    # tablo.setItem(i, 2, QTableWidgetItem(str(kayit['puan'])))
+                    tablo.setItem(i, 2, item)                    
                     
-                    tablo.setItem(i, 4, QTableWidgetItem(f"{dakika:02d}:{saniye:02d}"))
-                    tablo.setItem(i, 5, QTableWidgetItem(str(ipucu)))
-                    tablo.setItem(i, 6, QTableWidgetItem(str(silme)))
-                    tablo.setItem(i, 7, QTableWidgetItem(str(kontrol)))
+                    tablo.setItem(i, 3, QTableWidgetItem(f"{dakika:02d}:{saniye:02d}"))
+                    tablo.setItem(i, 4, QTableWidgetItem(str(ipucu)))
+                    tablo.setItem(i, 5, QTableWidgetItem(str(silme)))
+                    tablo.setItem(i, 6, QTableWidgetItem(str(kontrol)))
                 
                 # Tablo dolduırulduktan sonra satır yüksekliğini ayarla
                 for i in range(tablo.rowCount()):
                     tablo.setRowHeight(i, 20)   
 
-                tablo.setColumnWidth(0, 15)   # Sıra
-                tablo.setColumnWidth(1, 200)  # Tarih
-                tablo.setColumnWidth(2, 250)  # İsim
-                tablo.setColumnWidth(3, 80)   # Puan
-                tablo.setColumnWidth(4, 90)   # Süre
-                tablo.setColumnWidth(5, 60)   # İpucu
-                tablo.setColumnWidth(6, 60)   # Silme
-                tablo.setColumnWidth(7, 70)   # Kontrol
+                tablo.setColumnWidth(0, 200)  # Tarih
+                tablo.setColumnWidth(1, 200)  # İsim
+                tablo.setColumnWidth(2, 80)   # Puan
+                tablo.setColumnWidth(3, 90)   # Süre
+                tablo.setColumnWidth(4, 60)   # İpucu
+                tablo.setColumnWidth(5, 60)   # Silme
+                tablo.setColumnWidth(6, 70)   # Kontrol
 
                 # Tablo ayarları
                 tablo.setEditTriggers(QTableWidget.NoEditTriggers)
@@ -873,10 +871,11 @@ class SudokuOyunu(QMainWindow):
     
     def tablo_sag_tus_menusu(self, pos, zorluk, tablo):
         """Puan tablosunda sağ tıklama menüsü"""
-        # Seçili satırı al
-        secili_satir = tablo.currentRow()
-        if secili_satir < 0:
-            return
+        secili_satirlar = tablo.selectionModel().selectedRows()
+        if len(secili_satirlar) != 1:
+            return  # Tam olarak bir satır seçili değilse menü açılmasın
+
+        secili_satir = secili_satirlar[0].row()
         
         # Context menü oluştur
         menu = QMenu(self)
