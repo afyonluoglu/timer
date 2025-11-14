@@ -54,7 +54,7 @@ class SudokuOyunu(QMainWindow):
         self.setCentralWidget(merkez_widget)
         ana_duzen = QVBoxLayout(merkez_widget)
         
-        # Üst bilgi alanı
+        # Üst bilgi alanı - İlk satır
         ust_duzen = QHBoxLayout()
         
         # Zorluk seçici
@@ -75,16 +75,34 @@ class SudokuOyunu(QMainWindow):
         # Yeni değişkenler ekle
         self.silme_hakki = MAX_DELETE_COUNT
         self.toplam_puan = 0  # Toplam puan için yeni değişken
-        
-        # Silme hakkı göstergesi
-        self.silme_hakki_label = QLabel(f"Silme Hakkı: {self.silme_hakki}")
-        ust_duzen.addWidget(self.silme_hakki_label)
+        self.oynanan_oyun_sayisi = 0  # Oynanan oyun sayısı
         
         # Toplam puan göstergesi
         self.toplam_puan_label = QLabel("Toplam Puan: 0")
         ust_duzen.addWidget(self.toplam_puan_label)
-        
+                
         ana_duzen.addLayout(ust_duzen)
+        
+        # İkinci satır - İstatistikler
+        istatistik_duzen = QHBoxLayout()
+        
+        # Oyun sayısı göstergesi
+        self.oyun_sayisi_label = QLabel("Oyun: 0")
+        istatistik_duzen.addWidget(self.oyun_sayisi_label)
+
+        # Silme hakkı göstergesi
+        self.silme_hakki_label = QLabel(f"Silme Hakkı: {self.silme_hakki}")
+        istatistik_duzen.addWidget(self.silme_hakki_label)
+        
+        # İpucu sayısı göstergesi
+        self.ipucu_label = QLabel("İpucu: 0")
+        istatistik_duzen.addWidget(self.ipucu_label)
+        
+        # Kontrol sayısı göstergesi
+        self.kontrol_label = QLabel("Kontrol: 0")
+        istatistik_duzen.addWidget(self.kontrol_label)
+        
+        ana_duzen.addLayout(istatistik_duzen)
         
         # Sudoku ızgarası
         self.izgara = QGridLayout()
@@ -152,7 +170,7 @@ class SudokuOyunu(QMainWindow):
         self.tahta = [[SudokuHucre() for _ in range(9)] for _ in range(9)]
         
         # Başlangıçta yeni oyun başlat
-        self.yeni_oyun()
+        self.yeni_oyun(puan_sifirla=True)
         
         # Klavye kısayolları için focus policy
         self.setFocusPolicy(Qt.StrongFocus)
@@ -169,6 +187,7 @@ class SudokuOyunu(QMainWindow):
         oyun_menu.addAction(yeni_oyun)
         
         puan_tablosu = QAction('Puan Tablosu', self)
+        puan_tablosu.setShortcut('F3')
         puan_tablosu.triggered.connect(self.puan_tablosunu_goster)
         oyun_menu.addAction(puan_tablosu)
         
@@ -199,6 +218,9 @@ class SudokuOyunu(QMainWindow):
                         self.hatali_hucreler.remove((satir, sutun))
                 
                 self.hucre_stilini_guncelle(satir, sutun)
+                
+                # Tüm hücreler doluysa otomatik kontrol et
+                self.otomatik_kontrol()
         
         elif event.key() == Qt.Key_Delete or event.key() == Qt.Key_Backspace:
             # Hücreyi temizle
@@ -221,6 +243,20 @@ class SudokuOyunu(QMainWindow):
                         self.oyun_bitti("Silme hakkınız bitti!")
                 else:
                     QMessageBox.warning(self, "Uyarı", "Silme hakkınız kalmadı!")
+
+    def otomatik_kontrol(self):
+        """Tüm hücreler doluysa otomatik olarak kontrol et"""
+        if not self.oyun_aktif:
+            return
+        
+        # Tüm hücrelerin dolu olup olmadığını kontrol et
+        for i in range(9):
+            for j in range(9):
+                if self.tahta[i][j].deger == 0:
+                    return  # Boş hücre varsa kontrol yapma
+        
+        # Tüm hücreler doluysa kontrol et
+        self.cozumu_kontrol_et()
 
     def hucre_secildi(self, satir, sutun):
         """Bir hücre seçildiğinde çağrılır"""
@@ -318,10 +354,14 @@ class SudokuOyunu(QMainWindow):
         self.hatali_hucreler.clear()
         self.ipucu_hucreleri.clear()
         
-        # İstatistikleri sıfırla
-        self.ipucu_sayisi = 0
-        self.silme_sayisi = 0
+        # Yeni oyun ise İstatistikleri sıfırla
+        if puan_sifirla:
+            self.ipucu_sayisi = 0
+            self.silme_sayisi = 0
+            self.toplam_puan = 0
+
         self.kontrol_sayisi = 0
+        self.oynanan_oyun_sayisi = 0
         
         # Yeni oyun oluştur
         self.tahta = self.sudoku_olustur(self.zorluk)
@@ -335,18 +375,18 @@ class SudokuOyunu(QMainWindow):
         self.timer.start(1000)  # Her saniye güncelle
         self.oyun_aktif = True
         
-        # Puanı ayarla
-        if puan_sifirla:
-            self.puan = 500
-            self.toplam_puan = 0
-            self.toplam_puan_label.setText("Toplam Puan: 0")
-            self.silme_hakki = MAX_DELETE_COUNT
-            self.silme_hakki_label.setText(f"Silme Hakkı: {self.silme_hakki}")
-        else:
-            self.puan = 500
+        # Her zaman tüm değerleri sıfırla (Yeni Oyun butonu davranışı)
+        self.puan = 500
+        self.silme_hakki = MAX_DELETE_COUNT
         
+        # Label'ları güncelle
         self.puan_label.setText(f"Puan: {self.puan}")
-    
+        self.toplam_puan_label.setText("Toplam Puan: 0")
+        self.oyun_sayisi_label.setText("Oyun: 1")
+        self.silme_hakki_label.setText(f"Silme Hakkı: {self.silme_hakki}")
+        self.ipucu_label.setText("İpucu: " + str(self.ipucu_sayisi))
+        self.kontrol_label.setText("Kontrol: 0")
+
     def sudoku_olustur(self, zorluk):
         """Sudoku tahtası oluştur ve çözümünü sakla"""
         tahta = [[SudokuHucre() for _ in range(9)] for _ in range(9)]
@@ -513,21 +553,18 @@ class SudokuOyunu(QMainWindow):
             for j in range(9):
                 if self.tahta[i][j].deger == 0:
                     bos_hucre_var = True
-                elif not self.tahta[i][j].sabit:  # Sadece kullanıcının girdiği sayıları kontrol et
+                elif not self.tahta[i][j].sabit:
                     if self.tahta[i][j].deger != self.cozum_tahtasi[i][j]:
                         hatali_hucreler.append((i, j))
         
         if hatali_hucreler:
-            self.kontrol_sayisi += 1  # sadece "Hatalı hücreler varsa" Kontrol sayısını artır
-
-            # Hatalı hücreleri kaydet
+            self.kontrol_sayisi += 1
+            self.kontrol_label.setText(f"Kontrol: {self.kontrol_sayisi}")
             self.hatali_hucreler = set(hatali_hucreler)
             
-            # Hatalı hücreleri işaretle
             for satir, sutun in hatali_hucreler:
                 self.hucre_stilini_guncelle(satir, sutun)
             
-            # Hata mesajı göster
             hata_konumlari = ", ".join([f"({s+1},{k+1})" for s, k in hatali_hucreler])
             QMessageBox.warning(
                 self, 
@@ -549,109 +586,68 @@ class SudokuOyunu(QMainWindow):
         self.toplam_puan += self.puan
         self.toplam_puan_label.setText(f"Toplam Puan: {self.toplam_puan}")
         
-        # Skor tablosuna girip girmediğini kontrol et
-        skor_tablosuna_girebilir_mi = self.skor_tablosuna_girebilir_mi_kontrol(self.toplam_puan)
+        # Oyun sayısını artır
+        self.oynanan_oyun_sayisi += 1
         
-        if skor_tablosuna_girebilir_mi:
-            # İsim al ve skoru kaydet
-            isim, ok = QInputDialog.getText(
-                self, 
-                "Tebrikler!", 
-                f"Sudoku'yu başarıyla çözdünüz!\n"
-                f"Puan: {self.puan}\n"
-                f"Toplam Puan: {self.toplam_puan}\n"
-                f"Süre: {gecen_sure // 60:02d}:{gecen_sure % 60:02d}\n"
-                f"İpucu: {self.ipucu_sayisi}, Silme: {self.silme_sayisi}, Kontrol: {self.kontrol_sayisi}\n\n"
-                f"Skorunuz, puan tablosuna girmeye hak kazandı!\n"
-                f"İsminizi girin:"
-            )
-            
-            if ok and isim.strip():
-                self.puan_kaydet(isim.strip(), self.toplam_puan, gecen_sure)
-                
-                # Skor tablosunu göster
-                self.puan_tablosunu_goster()
-                
-                # Yeni oyun sorusu
-                cevap = QMessageBox.question(
-                    self,
-                    "Yeni Oyun",
-                    "Yeni oyuna devam etmek ister misiniz?",
-                    QMessageBox.Yes | QMessageBox.No
-                )
-                
-                if cevap == QMessageBox.Yes:
-                    self.silme_hakki = MAX_DELETE_COUNT
-                    self.silme_hakki_label.setText(f"Silme Hakkı: {self.silme_hakki}")
-                    self.yeni_oyun(puan_sifirla=False)
-            else:
-                # İsim girilmedi, sadece tebrik mesajı
-                cevap = QMessageBox.question(
-                    self,
-                    "Tebrikler!",
-                    f"Sudoku'yu başarıyla çözdünüz!\n"
-                    f"Puan: {self.puan}\n"
-                    f"Toplam Puan: {self.toplam_puan}\n\n"
-                    f"Yeni oyuna devam etmek ister misiniz?",
-                    QMessageBox.Yes | QMessageBox.No
-                )
-                
-                if cevap == QMessageBox.Yes:
-                    self.silme_hakki = MAX_DELETE_COUNT
-                    self.silme_hakki_label.setText(f"Silme Hakkı: {self.silme_hakki}")
-                    self.yeni_oyun(puan_sifirla=False)
+        # Yeni oyun sorusu
+        cevap = QMessageBox.question(
+            self,
+            "Tebrikler!",
+            f"Sudoku'yu başarıyla çözdünüz!\n"
+            f"Puan: {self.puan}\n"
+            f"Toplam Puan: {self.toplam_puan}\n"
+            f"Oynanan Oyun: {self.oynanan_oyun_sayisi}\n"
+            f"Süre: {gecen_sure // 60:02d}:{gecen_sure % 60:02d}\n"
+            f"İpucu: {self.ipucu_sayisi}, Silme: {self.silme_sayisi}, Kontrol: {self.kontrol_sayisi}\n\n"
+            f"Yeni oyuna devam etmek ister misiniz?",
+            QMessageBox.Yes | QMessageBox.No
+        )
+        
+        if cevap == QMessageBox.Yes:
+            # Devam ediyorsa skor tablosu kontrolü yapma
+            self.silme_hakki = MAX_DELETE_COUNT
+            self.silme_hakki_label.setText(f"Silme Hakkı: {self.silme_hakki}")
+            # Devam oyunu için yeni tahta oluştur
+            self.tahta = self.sudoku_olustur(self.zorluk)
+            self.tahtayi_guncelle()
+            self.hatali_hucreler.clear()
+            self.ipucu_hucreleri.clear()
+            self.silme_sayisi = 0
+            self.kontrol_sayisi = 0
+            self.ipucu_label.setText("İpucu: "+ str(self.ipucu_sayisi))
+            self.kontrol_label.setText("Kontrol: 0")
+            self.puan = 500
+            self.puan_label.setText(f"Puan: {self.puan}")
+            self.baslangic_zamani = datetime.datetime.now()
+            self.timer.start(1000)
+            self.oyun_aktif = True
         else:
-            # Skor tablosuna giremedi
-            cevap = QMessageBox.question(
-                self,
-                "Tebrikler!",
-                f"Sudoku'yu başarıyla çözdünüz!\n"
-                f"Puan: {self.puan}\n"
-                f"Toplam Puan: {self.toplam_puan}\n"
-                f"Süre: {gecen_sure // 60:02d}:{gecen_sure % 60:02d}\n"
-                f"İpucu: {self.ipucu_sayisi}, Silme: {self.silme_sayisi}, Kontrol: {self.kontrol_sayisi}\n\n"
-                f"Yeni oyuna devam etmek ister misiniz?",
-                QMessageBox.Yes | QMessageBox.No
-            )
+            # Devam etmiyorsa skor tablosu kontrolü yap
+            skor_tablosuna_girebilir_mi = self.skor_tablosuna_girebilir_mi_kontrol(self.toplam_puan)
             
-            if cevap == QMessageBox.Yes:
-                self.silme_hakki = MAX_DELETE_COUNT
-                self.silme_hakki_label.setText(f"Silme Hakkı: {self.silme_hakki}")
-                self.yeni_oyun(puan_sifirla=False)
-    
-    def skor_tablosuna_girebilir_mi_kontrol(self, yeni_puan):
-        """Yeni puanın skor tablosuna girip girmeyeceğini kontrol et"""
-        try:
-            puan_dosyasi = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sudoku_puanlar.json")
+            if skor_tablosuna_girebilir_mi:
+                isim, ok = QInputDialog.getText(
+                    self, 
+                    "Skor Tablosu", 
+                    f"Skorunuz, puan tablosuna girmeye hak kazandı!\n"
+                    f"Toplam Puan: {self.toplam_puan}\n"
+                    f"Oynanan Oyun: {self.oynanan_oyun_sayisi}\n\n"
+                    f"İsminizi girin:"
+                )
+                
+                if ok and isim.strip():
+                    self.puan_kaydet(isim.strip(), self.toplam_puan, gecen_sure)
             
-            puanlar = {"Kolay": [], "Orta": [], "Zor": []}
-            if os.path.exists(puan_dosyasi):
-                with open(puan_dosyasi, 'r', encoding='utf-8') as f:
-                    puanlar = json.load(f)
-            
-            zorluk_puanlari = puanlar.get(self.zorluk, [])
-            
-            # Eğer 10'dan az kayıt varsa direkt girebilir
-            if len(zorluk_puanlari) < 10:
-                return True
-            
-            # En düşük skoru bul
-            en_dusuk_skor = min(zorluk_puanlari, key=lambda x: x['puan'])
-            
-            # Yeni puan en düşük skordan yüksekse girebilir
-            return yeni_puan > en_dusuk_skor['puan']
-            
-        except Exception:
-            # Hata durumunda her zaman kaydetmeye izin ver
-            return True
+            # Skor tablosunu göster (isim girilip girilmediğine bakmaksızın)
+            self.puan_tablosunu_goster()
 
     def ipucu_goster(self):
-        """Rastgele bir boş hücreye doğru sayıyı yerleştir"""
+        """Rastgele bir boş hücreye doğru sayıyı yerleştir. Mevcut puanı 10 puan azaltır"""
         if not self.oyun_aktif or not self.cozum_tahtasi:
             return
         
         if self.puan <= 10:
-            QMessageBox.warning(self, "Uyarı", "Puanınız ipucu için yetersiz!")
+            QMessageBox.warning(self, "Uyarı", "Puanınız ipucu için yetersiz! (En az 10 puanınız olmalı)")
             return
         
         # Boş hücreleri bul
@@ -677,6 +673,7 @@ class SudokuOyunu(QMainWindow):
         # İpucu hücresini kaydet ve sayacı artır
         self.ipucu_hucreleri.add((satir, sutun))
         self.ipucu_sayisi += 1
+        self.ipucu_label.setText(f"İpucu: {self.ipucu_sayisi}")
         
         # Hücreyi güncelle
         buton = self.hucre_butonlari[satir][sutun]
@@ -686,6 +683,32 @@ class SudokuOyunu(QMainWindow):
         # Puanı güncelle
         self.puan = max(0, self.puan - 10)
         self.puan_label.setText(f"Puan: {self.puan}")
+
+    def skor_tablosuna_girebilir_mi_kontrol(self, yeni_puan):
+        """Yeni puanın skor tablosuna girip girmeyeceğini kontrol et"""
+        try:
+            puan_dosyasi = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sudoku_puanlar.json")
+            
+            puanlar = {"Kolay": [], "Orta": [], "Zor": []}
+            if os.path.exists(puan_dosyasi):
+                with open(puan_dosyasi, 'r', encoding='utf-8') as f:
+                    puanlar = json.load(f)
+            
+            zorluk_puanlari = puanlar.get(self.zorluk, [])
+            
+            # Eğer 10'dan az kayıt varsa direkt girebilir
+            if len(zorluk_puanlari) < 10:
+                return True
+            
+            # En düşük skoru bul
+            en_dusuk_skor = min(zorluk_puanlari, key=lambda x: x['puan'])
+            
+            # Yeni puan en düşük skordan yüksekse girebilir
+            return yeni_puan > en_dusuk_skor['puan']
+            
+        except Exception:
+            # Hata durumunda her zaman kaydetmeye izin ver
+            return True
 
     def oyun_bitti(self, mesaj):
         """Oyunu bitir ve puan tablosuna girip girmediğini kontrol et"""
@@ -724,6 +747,7 @@ class SudokuOyunu(QMainWindow):
             'ipucu': self.ipucu_sayisi,
             'silme': self.silme_sayisi,
             'kontrol': self.kontrol_sayisi,
+            'oyun_sayisi': self.oynanan_oyun_sayisi,
             'tarih': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         })
         
@@ -751,6 +775,19 @@ class SudokuOyunu(QMainWindow):
     
     def zorluk_degisti(self, yeni_zorluk):
         """Zorluk seviyesi değiştiğinde çağrılır"""
+        # Ara oyunlardaysa (oynanan_oyun_sayisi > 0) zorluk değiştirmeyi engelle
+        if self.oynanan_oyun_sayisi > 0 and self.oyun_aktif:
+            QMessageBox.warning(
+                self,
+                "Uyarı",
+                "Ara oyunlarda zorluk seviyesi değiştirilemez!\nYeni oyuna başlayın."
+            )
+            # Sinyal döngüsüne girmemek için geçici olarak sinyal bağlantısını kes
+            self.zorluk_combo.currentTextChanged.disconnect(self.zorluk_degisti)
+            self.zorluk_combo.setCurrentText(self.zorluk)
+            self.zorluk_combo.currentTextChanged.connect(self.zorluk_degisti)
+            return
+        
         if self.oyun_aktif:
             cevap = QMessageBox.question(
                 self,
@@ -760,11 +797,13 @@ class SudokuOyunu(QMainWindow):
             )
             if cevap == QMessageBox.Yes:
                 self.zorluk = yeni_zorluk
-                self.yeni_oyun()
+                self.yeni_oyun(puan_sifirla=False)
             else:
-                # Zorluk değişikliğini geri al
+                # Zorluk değişikliğini geri al (sinyal döngüsüne girmemek için)
+                self.zorluk_combo.currentTextChanged.disconnect(self.zorluk_degisti)
                 self.zorluk_combo.setCurrentText(self.zorluk)
-    
+                self.zorluk_combo.currentTextChanged.connect(self.zorluk_degisti)
+
     def puan_tablosunu_goster(self):
         """Puan tablosunu tablo formatında göster"""
         try:
@@ -781,7 +820,7 @@ class SudokuOyunu(QMainWindow):
             dialog = QDialog(self)
             dialog.setWindowTitle("Puan Tablosu")
             dialog.setModal(True)
-            dialog.resize(900, 1300)
+            dialog.resize(1000, 1300)
             
             # Düzen
             duzen = QVBoxLayout()
@@ -792,13 +831,13 @@ class SudokuOyunu(QMainWindow):
                 grup = QGroupBox(zorluk)
                 grup_duzen = QVBoxLayout()
                 
-                # Tablo oluştur
+                # Tablo oluştur (8 sütun)
                 tablo = QTableWidget()
-                tablo.setColumnCount(7)
-                tablo.setHorizontalHeaderLabels(["Tarih", "İsim", "Puan", "Süre", "İpucu", "Silme", "Kontrol"])
+                tablo.setColumnCount(8)
+                tablo.setHorizontalHeaderLabels(["Tarih", "İsim", "Puan", "Süre", "Oyun", "İpucu", "Silme", "Kontrol"])
                 tablo.setContextMenuPolicy(Qt.CustomContextMenu)
                 tablo.customContextMenuRequested.connect(
-                    lambda pos, z=zorluk, t=tablo: self.tablo_sag_tus_menusu(pos, z, t)
+                    lambda pos, z=zorluk, t=tablo: self.puan_tablosu_sag_tus_menusu(pos, z, t)
                 )
                 
                 # Zorluk seviyesine göre puanları al ve sırala
@@ -815,15 +854,12 @@ class SudokuOyunu(QMainWindow):
                     ipucu = kayit.get('ipucu', 0)
                     silme = kayit.get('silme', 0)
                     kontrol = kayit.get('kontrol', 0)
+                    oyun_sayisi = kayit.get('oyun_sayisi', 1)
                     tarih = kayit.get('tarih', 'Bilinmiyor')
                     
                     sure = kayit['sure']
                     dakika = sure // 60
                     saniye = sure % 60
-
-                    # item = QTableWidgetItem(str(i + 1))
-                    # item.setTextAlignment(Qt.AlignCenter)
-                    # tablo.setItem(i, 0, item)                    
 
                     tablo.setItem(i, 0, QTableWidgetItem(str(tarih)))
                     tablo.setItem(i, 1, QTableWidgetItem(kayit['isim']))
@@ -833,26 +869,27 @@ class SudokuOyunu(QMainWindow):
                     tablo.setItem(i, 2, item)                    
                     
                     tablo.setItem(i, 3, QTableWidgetItem(f"{dakika:02d}:{saniye:02d}"))
-                    tablo.setItem(i, 4, QTableWidgetItem(str(ipucu)))
-                    tablo.setItem(i, 5, QTableWidgetItem(str(silme)))
-                    tablo.setItem(i, 6, QTableWidgetItem(str(kontrol)))
+                    tablo.setItem(i, 4, QTableWidgetItem(str(oyun_sayisi)))
+                    tablo.setItem(i, 5, QTableWidgetItem(str(ipucu)))
+                    tablo.setItem(i, 6, QTableWidgetItem(str(silme)))
+                    tablo.setItem(i, 7, QTableWidgetItem(str(kontrol)))
                 
-                # Tablo dolduırulduktan sonra satır yüksekliğini ayarla
+                # Tablo doldurulduktan sonra satır yüksekliğini ayarla
                 for i in range(tablo.rowCount()):
                     tablo.setRowHeight(i, 20)   
 
-                tablo.setColumnWidth(0, 200)  # Tarih
-                tablo.setColumnWidth(1, 200)  # İsim
+                tablo.setColumnWidth(0, 180)  # Tarih
+                tablo.setColumnWidth(1, 180)  # İsim
                 tablo.setColumnWidth(2, 80)   # Puan
-                tablo.setColumnWidth(3, 90)   # Süre
-                tablo.setColumnWidth(4, 60)   # İpucu
-                tablo.setColumnWidth(5, 60)   # Silme
-                tablo.setColumnWidth(6, 70)   # Kontrol
+                tablo.setColumnWidth(3, 80)   # Süre
+                tablo.setColumnWidth(4, 60)   # Oyun
+                tablo.setColumnWidth(5, 60)   # İpucu
+                tablo.setColumnWidth(6, 60)   # Silme
+                tablo.setColumnWidth(7, 70)   # Kontrol
 
                 # Tablo ayarları
                 tablo.setEditTriggers(QTableWidget.NoEditTriggers)
                 tablo.setSelectionBehavior(QTableWidget.SelectRows)
-                # tablo.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
                 
                 grup_duzen.addWidget(tablo)
                 grup.setLayout(grup_duzen)
@@ -869,7 +906,7 @@ class SudokuOyunu(QMainWindow):
         except Exception as e:
             QMessageBox.warning(self, "Hata", f"Puan tablosu gösterilirken hata oluştu: {str(e)}")
     
-    def tablo_sag_tus_menusu(self, pos, zorluk, tablo):
+    def puan_tablosu_sag_tus_menusu(self, pos, zorluk, tablo):
         """Puan tablosunda sağ tıklama menüsü"""
         secili_satirlar = tablo.selectionModel().selectedRows()
         if len(secili_satirlar) != 1:
@@ -879,7 +916,7 @@ class SudokuOyunu(QMainWindow):
         
         # Context menü oluştur
         menu = QMenu(self)
-        sil_action = menu.addAction("Sil")
+        sil_action = menu.addAction("Bu Puan Kaydını Sil")
         
         action = menu.exec_(tablo.viewport().mapToGlobal(pos))
         
@@ -982,7 +1019,7 @@ class SudokuOyunu(QMainWindow):
         QMessageBox.information(self, "Nasıl Oynanır?", yardim_metni)
     
     def sag_tus_menusu(self, satir, sutun):
-        """Sağ tıklama ile olası sayıları gösteren menü"""
+        """Oyun panelindeki Hücreye sağ tıklama ile olası sayıları gösteren menü"""
         if not self.oyun_aktif:
             return
         
@@ -1065,5 +1102,8 @@ class SudokuOyunu(QMainWindow):
         # Hücreyi seç ve stilini güncelle
         self.secili_hucre = (satir, sutun)
         self.hucre_stilini_guncelle(satir, sutun, secili=True)
-    
+        
+        # Tüm hücreler doluysa otomatik kontrol et
+        self.otomatik_kontrol()
+
     # ---------------------------------
