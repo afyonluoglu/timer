@@ -80,6 +80,9 @@ class SudokuOyunu(QMainWindow):
         # Toplam puan göstergesi
         self.toplam_puan_label = QLabel("Toplam Puan: 0")
         ust_duzen.addWidget(self.toplam_puan_label)
+        
+        # Sola hizalamak için stretch ekle
+        ust_duzen.addStretch()
                 
         ana_duzen.addLayout(ust_duzen)
         
@@ -101,6 +104,9 @@ class SudokuOyunu(QMainWindow):
         # Kontrol sayısı göstergesi
         self.kontrol_label = QLabel("Kontrol: 0")
         istatistik_duzen.addWidget(self.kontrol_label)
+        
+        # Sola hizalamak için stretch ekle
+        istatistik_duzen.addStretch()
         
         ana_duzen.addLayout(istatistik_duzen)
         
@@ -157,6 +163,11 @@ class SudokuOyunu(QMainWindow):
         ipucu_btn.clicked.connect(self.ipucu_goster)
         alt_duzen.addWidget(ipucu_btn)
         
+        # Oyunu Bitir butonu ekle
+        bitir_btn = QPushButton("Oyunu Bitir")
+        bitir_btn.clicked.connect(self.oyunu_bitir)
+        alt_duzen.addWidget(bitir_btn)
+        
         ana_duzen.addLayout(alt_duzen)
         
         # Menü oluştur
@@ -190,6 +201,11 @@ class SudokuOyunu(QMainWindow):
         puan_tablosu.setShortcut('F3')
         puan_tablosu.triggered.connect(self.puan_tablosunu_goster)
         oyun_menu.addAction(puan_tablosu)
+        
+        oyunu_bitir = QAction('Oyunu Bitir', self)
+        oyunu_bitir.setShortcut('F4')
+        oyunu_bitir.triggered.connect(self.oyunu_bitir)
+        oyun_menu.addAction(oyunu_bitir)
         
         # Yardım menüsü
         yardim_menu = menubar.addMenu('Yardım')
@@ -710,19 +726,97 @@ class SudokuOyunu(QMainWindow):
             # Hata durumunda her zaman kaydetmeye izin ver
             return True
 
-    def oyun_bitti(self, mesaj):
-        """Oyunu bitir ve puan tablosuna girip girmediğini kontrol et"""
+    def oyunu_bitir(self):
+        """Oyunu bitir ve skor tablosu kontrolü yap"""
+        if not self.oyun_aktif:
+            QMessageBox.warning(self, "Uyarı", "Aktif oyun yok!")
+            return
+        
+        # Kullanıcıya onay sor
+        cevap = QMessageBox.question(
+            self,
+            "Oyunu Bitir",
+            "Oyunu bitirmek istediğinizden emin misiniz?\n"
+            "Mevcut ilerlemeniz kaybolacak!",
+            QMessageBox.Yes | QMessageBox.No
+        )
+        
+        if cevap != QMessageBox.Yes:
+            return
+        
+        # Oyunu durdur
         self.oyun_aktif = False
         self.timer.stop()
         
-        # İsim iste
-        isim, ok = QInputDialog.getText(self, "Oyun Bitti!", 
-            f"{mesaj}\nToplam Puanınız: {self.toplam_puan}\nİsminizi girin:")
+        # Eğer hiç oyun tamamlanmadıysa (oynanan_oyun_sayisi == 0)
+        if self.oynanan_oyun_sayisi == 0:
+            QMessageBox.information(
+                self,
+                "Oyun Bitti",
+                "Hiç oyun tamamlanmadığı için puan kaydedilmeyecek."
+            )
+            return
         
-        if ok and isim:
-            self.puan_kaydet(isim, self.toplam_puan)
-            self.puan_tablosunu_goster()
+        # Mevcut toplam puan ile skor tablosu kontrolü
+        gecen_sure = int((datetime.datetime.now() - self.baslangic_zamani).total_seconds())
+        
+        skor_tablosuna_girebilir_mi = self.skor_tablosuna_girebilir_mi_kontrol(self.toplam_puan)
+        
+        if skor_tablosuna_girebilir_mi:
+            isim, ok = QInputDialog.getText(
+                self, 
+                "Skor Tablosu", 
+                f"Skorunuz, puan tablosuna girmeye hak kazandı!\n"
+                f"Toplam Puan: {self.toplam_puan}\n"
+                f"Oynanan Oyun: {self.oynanan_oyun_sayisi}\n\n"
+                f"İsminizi girin:"
+            )
             
+            if ok and isim.strip():
+                self.puan_kaydet(isim.strip(), self.toplam_puan, gecen_sure)
+        
+        # Skor tablosunu göster
+        self.puan_tablosunu_goster()
+
+    def oyun_bitti(self, mesaj):
+        """Silme hakkı bittiğinde oyunu bitir ve puan tablosuna girip girmediğini kontrol et"""
+        self.oyun_aktif = False
+        self.timer.stop()
+        
+        # Eğer hiç oyun tamamlanmadıysa
+        if self.oynanan_oyun_sayisi == 0:
+            QMessageBox.warning(self, "Oyun Bitti!", f"{mesaj}\nHiç oyun tamamlanmadığı için puan kaydedilmeyecek.")
+            return
+        
+        gecen_sure = int((datetime.datetime.now() - self.baslangic_zamani).total_seconds())
+        
+        skor_tablosuna_girebilir_mi = self.skor_tablosuna_girebilir_mi_kontrol(self.toplam_puan)
+        
+        if skor_tablosuna_girebilir_mi:
+            isim, ok = QInputDialog.getText(
+                self, 
+                "Oyun Bitti!", 
+                f"{mesaj}\n"
+                f"Toplam Puan: {self.toplam_puan}\n"
+                f"Oynanan Oyun: {self.oynanan_oyun_sayisi}\n\n"
+                f"Skorunuz puan tablosuna girmeye hak kazandı!\n"
+                f"İsminizi girin:"
+            )
+            
+            if ok and isim.strip():
+                self.puan_kaydet(isim.strip(), self.toplam_puan, gecen_sure)
+        else:
+            QMessageBox.information(
+                self,
+                "Oyun Bitti!",
+                f"{mesaj}\n"
+                f"Toplam Puan: {self.toplam_puan}\n"
+                f"Oynanan Oyun: {self.oynanan_oyun_sayisi}"
+            )
+        
+        # Skor tablosunu göster
+        self.puan_tablosunu_goster()
+
     def puan_kaydet(self, isim, puan, sure=None):
         """Puanı kaydet ve en iyi 10 skoru tut"""
         puan_dosyasi = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
