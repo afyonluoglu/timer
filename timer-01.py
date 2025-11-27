@@ -94,6 +94,7 @@ class Zamanlayici:
         # sure ve toplam_sure, ZamanlayiciUygulamasi tarafından ilk kurulumda veya tekrar başlatıldığında ayarlanır.
         self.sure = 0  # saniye cinsinden kalan süre
         self.toplam_sure = 0 # saniye cinsinden bu döngünün toplam süresi
+        self.bekleme_modunda = False  # Tekrar aralığında bekleme durumu
 
     def get_gorunen_aciklama(self):
         """Görüntülenecek açıklamayı döndürür, tekrar bilgisini içerir."""
@@ -118,6 +119,7 @@ class Zamanlayici:
             'tekrar_araligi_dakika': self.tekrar_araligi_dakika,
             'ozel_saat_aktif_ilk_calisma': self.ozel_saat_aktif_ilk_calisma,
             'ozel_saat_str': self.ozel_saat_str,
+            'bekleme_modunda': self.bekleme_modunda,
             'son_guncelleme_zamani': datetime.datetime.now().isoformat()              
         }
     
@@ -140,6 +142,7 @@ class Zamanlayici:
         zamanlayici.sure = data['sure'] 
         zamanlayici.toplam_sure = data.get('toplam_sure', zamanlayici.dakika_ayari * 60) # Eski kayıtlar için fallback
         zamanlayici.calisma_durumu = data.get('calisma_durumu', True)
+        zamanlayici.bekleme_modunda = data.get('bekleme_modunda', False)
         
         # Son güncelleme zamanını yükle
         if 'son_guncelleme_zamani' in data:
@@ -299,7 +302,7 @@ class AnaUygulamaPenceresi(QMainWindow):
     
     def tetris_ac(self):
         """Tetris penceresini aç"""
-        self.tetris_pencere = TetrisOyunu(self)
+        self.tetris_pencere = TetrisOyunu()
         self.tetris_pencere.show()
 
     def closeEvent(self, event):
@@ -986,17 +989,6 @@ class ZamanlayiciUygulamasi(QWidget):
             self.aktif_zamanlayicilar.append(yeni_zamanlayici)
             self.zamanlayici_widget_olustur(yeni_zamanlayici)
             
-            # simdi = datetime.datetime.now()
-            # self.gecmis_listesi.append({
-            #     'tarih': simdi.strftime('%d.%m.%Y %H:%M:%S'),
-            #     'sure': dakika_ayari_degeri, # Her zaman kullanıcının girdiği dakika
-            #     'aciklama': aciklama,
-            #     'alarm': alarm_dosyasi,
-            #     'tekrar_toplam_sayi': tekrar_sayisi,
-            #     'tekrar_araligi_dakika': tekrar_araligi_dakika,
-            #     'ozel_saat_aktif_ilk_calisma': alarm_zamani_aktif, # Geçmişe de ekleyelim
-            #     'ozel_saat_str': alarm_zamani_str if alarm_zamani_aktif else None
-            # })
             self.son_sure = dakika_ayari_degeri
             self.ayarlari_kaydet()
             show_toast(self,'Yeni zamanlayıcı başlıtıldı', f"{yeni_zamanlayici.get_gorunen_aciklama()}", 15000)
@@ -1010,17 +1002,43 @@ class ZamanlayiciUygulamasi(QWidget):
         # Çift tıklama sinyalini bağla
         zamanlayici_cerceve.doubleClicked.connect(self.handle_timer_double_click_event)
         
+        # Bekleme modunda arka plan rengini değiştir
+        if zamanlayici.bekleme_modunda:
+            # background-color: #fff3cd; → Sarı arka plan
+            # border: 2px solid #ffc107; → Kalın ve turuncu çerçeve
+            zamanlayici_cerceve.setStyleSheet("background-color: #fff3cd; border: 2px solid #ffc107;")
+        
         zamanlayici_duzen = QHBoxLayout()
+        
+        # Bekleme durumu ikonu ekle
+        durum_ikonu = QLabel()
+        if zamanlayici.bekleme_modunda:
+            durum_ikonu.setText("⏳")
+            durum_ikonu.setStyleSheet("font-size: 24px;")
+            durum_ikonu.setToolTip("Sonraki tekrar için bekleniyor")
+        else:
+            durum_ikonu.setText("▶️")
+            durum_ikonu.setStyleSheet("font-size: 24px;")
+            durum_ikonu.setToolTip("Aktif zamanlayıcı")
+        durum_ikonu.setObjectName(f"durum_ikonu_{zamanlayici.id}")
+        zamanlayici_duzen.addWidget(durum_ikonu)
         
         aciklama_etiketi = QLabel(zamanlayici.get_gorunen_aciklama())
         aciklama_etiketi.setMinimumWidth(150)
         aciklama_etiketi.setObjectName(f"aciklama_{zamanlayici.id}") # Nesne adı ekle
         zamanlayici_duzen.addWidget(aciklama_etiketi)
         
-        kalan_sure_etiketi = QLabel(f"{zamanlayici.sure // 60:02d}:{zamanlayici.sure % 60:02d}")
+        # Bekleme modunda farklı metin göster
+        sure_metni = f"{zamanlayici.sure // 60:02d}:{zamanlayici.sure % 60:02d}"
+        if zamanlayici.bekleme_modunda:
+            sure_metni = f"⏸ {sure_metni}"
+        
+        kalan_sure_etiketi = QLabel(sure_metni)
         kalan_sure_etiketi.setObjectName(f"sure_{zamanlayici.id}")
         kalan_sure_etiketi.setAlignment(Qt.AlignCenter)
         kalan_sure_etiketi.setFont(QFont("Arial", 12, QFont.Bold))
+        if zamanlayici.bekleme_modunda:
+            kalan_sure_etiketi.setStyleSheet("color: #856404;")
         zamanlayici_duzen.addWidget(kalan_sure_etiketi)
         
         toplam_sure_etiketi = QLabel(f"/{zamanlayici.toplam_sure // 60:02d}:{zamanlayici.toplam_sure % 60:02d}")
@@ -1132,13 +1150,35 @@ class ZamanlayiciUygulamasi(QWidget):
         if not cerceve:
             return
 
+        # Bekleme moduna göre arka plan rengini güncelle
+        if zamanlayici.bekleme_modunda:
+            cerceve.setStyleSheet("background-color: #fff3cd; border: 2px solid #ffc107;")
+        else:
+            cerceve.setStyleSheet("")  # Varsayılan stile dön
+
+        # Durum ikonunu güncelle
+        durum_ikonu = cerceve.findChild(QLabel, f"durum_ikonu_{zamanlayici.id}")
+        if durum_ikonu:
+            if zamanlayici.bekleme_modunda:
+                durum_ikonu.setText("⏳")
+                durum_ikonu.setToolTip("Sonraki tekrar için bekleniyor")
+            else:
+                durum_ikonu.setText("▶️")
+                durum_ikonu.setToolTip("Aktif zamanlayıcı")
+
         aciklama_etiketi = cerceve.findChild(QLabel, f"aciklama_{zamanlayici.id}")
         if aciklama_etiketi:
             aciklama_etiketi.setText(zamanlayici.get_gorunen_aciklama())
 
         kalan_sure_etiketi = cerceve.findChild(QLabel, f"sure_{zamanlayici.id}")
         if kalan_sure_etiketi:
-            kalan_sure_etiketi.setText(f"{zamanlayici.sure // 60:02d}:{zamanlayici.sure % 60:02d}")
+            sure_metni = f"{zamanlayici.sure // 60:02d}:{zamanlayici.sure % 60:02d}"
+            if zamanlayici.bekleme_modunda:
+                sure_metni = f"⏸ {sure_metni}"
+                kalan_sure_etiketi.setStyleSheet("color: #856404;")
+            else:
+                kalan_sure_etiketi.setStyleSheet("")
+            kalan_sure_etiketi.setText(sure_metni)
         
         toplam_sure_etiketi = cerceve.findChild(QLabel, f"toplam_sure_{zamanlayici.id}")
         if toplam_sure_etiketi:
@@ -1231,13 +1271,22 @@ class ZamanlayiciUygulamasi(QWidget):
                 
                 sure_etiketi = self.findChild(QLabel, f"sure_{zamanlayici.id}")
                 if sure_etiketi:
-                    sure_etiketi.setText(format_time(zamanlayici.sure))
+                    sure_metni = format_time(zamanlayici.sure)
+                    if zamanlayici.bekleme_modunda:
+                        sure_metni = f"⏸ {sure_metni}"
+                    sure_etiketi.setText(sure_metni)
 
                 
                 if zamanlayici.sure <= 0:
-                    # Zamanlayıcıyı hemen kaldırma, geçici listeye ekle
-                    tamamlanan_zamanlayicilar.append(zamanlayici)
-                    ayarlar_degisti = True
+                    # Bekleme modundan normal moda geçiş kontrolü
+                    if zamanlayici.bekleme_modunda:
+                        # Bekleme süresi doldu, asıl zamanlayıcıyı başlat
+                        self.sonraki_tekrari_baslat(zamanlayici)
+                        ayarlar_degisti = True
+                    else:
+                        # Normal zamanlayıcı tamamlandı
+                        tamamlanan_zamanlayicilar.append(zamanlayici)
+                        ayarlar_degisti = True
 
         # Tamamlanan zamanlayıcıları işle
         for zamanlayici in tamamlanan_zamanlayicilar:
@@ -1271,8 +1320,8 @@ class ZamanlayiciUygulamasi(QWidget):
                 tekrar_zamanı_str = "şimdi" if zamanlayici.tekrar_araligi_dakika == 0 else f"{zamanlayici.tekrar_araligi_dakika} dakika sonra"
                 record_log(f"🔁 {get_current_datetime_string()} Zamanlayıcı {zamanlayici.id} - '{zamanlayici.temel_aciklama}' {tekrar_zamanı_str} tekrar başlatılacak...")
                 
-                QTimer.singleShot(zamanlayici.tekrar_araligi_dakika * 60 * 1000, 
-                                lambda z_info=zamanlayici: self.sonraki_tekrari_baslat(z_info))
+                # Bekleme modunda yeni bir zamanlayıcı oluştur
+                self.bekleme_zamanlayicisi_olustur(zamanlayici)
             
             # Son olarak zamanlayıcıyı aktif listeden kaldır
             try:
@@ -1297,38 +1346,60 @@ class ZamanlayiciUygulamasi(QWidget):
         if ayarlar_degisti:
             self.ayarlari_kaydet()
 
-    def sonraki_tekrari_baslat(self, onceki_zamanlayici_bilgileri):
-        """Belirli bir aralık sonrası bir sonraki tekrarı başlatır."""
-        record_log(f"🔁 {get_current_datetime_string()}: '{onceki_zamanlayici_bilgileri.id} -{onceki_zamanlayici_bilgileri.temel_aciklama}' tekrar başlatıldı")
-
-        tekrar_araligi_str = "(Beklemeden tekrar)" if onceki_zamanlayici_bilgileri.tekrar_araligi_dakika == 0 else f"{onceki_zamanlayici_bilgileri.tekrar_araligi_dakika} dakika"
-        record_log(f"   🔸Tekrar Aralığı      : {tekrar_araligi_str}")
-        record_log(f"   🔸Mevcut Tekrar #     : {onceki_zamanlayici_bilgileri.tekrar_mevcut_calisma + 1}")
-        record_log(f"   🔸Toplam Tekrar Sayısı: {onceki_zamanlayici_bilgileri.tekrar_toplam_sayi}")
-
+    def bekleme_zamanlayicisi_olustur(self, onceki_zamanlayici):
+        """Tekrar aralığı için bekleme zamanlayıcısı oluşturur."""
         self.zamanlayici_id_sayaci += 1
-        yeni_tekrar_no = onceki_zamanlayici_bilgileri.tekrar_mevcut_calisma + 1
+        yeni_tekrar_no = onceki_zamanlayici.tekrar_mevcut_calisma + 1
         
-        yeni_zamanlayici = Zamanlayici(
+        bekleme_zamanlayici = Zamanlayici(
             id=self.zamanlayici_id_sayaci,
-            dakika_ayari=onceki_zamanlayici_bilgileri.dakika_ayari, 
-            temel_aciklama=onceki_zamanlayici_bilgileri.temel_aciklama,
-            alarm=onceki_zamanlayici_bilgileri.alarm_dosyasi,
-            baslama_zamani_ilk_kurulum=onceki_zamanlayici_bilgileri.baslama_zamani_ilk_kurulum,
-            tekrar_toplam_sayi=onceki_zamanlayici_bilgileri.tekrar_toplam_sayi,
+            dakika_ayari=onceki_zamanlayici.dakika_ayari,
+            temel_aciklama=onceki_zamanlayici.temel_aciklama,
+            alarm=onceki_zamanlayici.alarm_dosyasi,
+            baslama_zamani_ilk_kurulum=onceki_zamanlayici.baslama_zamani_ilk_kurulum,
+            tekrar_toplam_sayi=onceki_zamanlayici.tekrar_toplam_sayi,
             tekrar_mevcut_calisma=yeni_tekrar_no,
-            tekrar_araligi_dakika=onceki_zamanlayici_bilgileri.tekrar_araligi_dakika,
+            tekrar_araligi_dakika=onceki_zamanlayici.tekrar_araligi_dakika,
             ozel_saat_aktif_ilk_calisma=False,
             ozel_saat_str=None
         )
         
-        # Tekrarlar her zaman 'dakika_ayari' üzerinden çalışır
-        yeni_zamanlayici.sure = onceki_zamanlayici_bilgileri.dakika_ayari * 60
-        yeni_zamanlayici.toplam_sure = onceki_zamanlayici_bilgileri.dakika_ayari * 60
+        # Bekleme modunu aktif et
+        bekleme_zamanlayici.bekleme_modunda = True
         
-        self.aktif_zamanlayicilar.append(yeni_zamanlayici)
-        self.zamanlayici_widget_olustur(yeni_zamanlayici)
-        self.ayarlari_kaydet() # Yeni zamanlayıcı eklendiğinde kaydet
+        # Bekleme süresi (tekrar aralığı)
+        bekleme_suresi_saniye = onceki_zamanlayici.tekrar_araligi_dakika * 60
+        if bekleme_suresi_saniye == 0:
+            # Anında başlat
+            bekleme_zamanlayici.bekleme_modunda = False
+            bekleme_zamanlayici.sure = onceki_zamanlayici.dakika_ayari * 60
+            bekleme_zamanlayici.toplam_sure = onceki_zamanlayici.dakika_ayari * 60
+        else:
+            # Bekleme süresini ayarla
+            bekleme_zamanlayici.sure = bekleme_suresi_saniye
+            bekleme_zamanlayici.toplam_sure = bekleme_suresi_saniye
+        
+        self.aktif_zamanlayicilar.append(bekleme_zamanlayici)
+        self.zamanlayici_widget_olustur(bekleme_zamanlayici)
+        self.ayarlari_kaydet()
+    
+    def sonraki_tekrari_baslat(self, onceki_zamanlayici_bilgileri):
+        """Bekleme süresi dolduktan sonra asıl zamanlayıcıyı başlatır."""
+        record_log(f"🔁 {get_current_datetime_string()}: '{onceki_zamanlayici_bilgileri.id} -{onceki_zamanlayici_bilgileri.temel_aciklama}' tekrar başlatıldı")
+
+        tekrar_araligi_str = "(Beklemeden tekrar)" if onceki_zamanlayici_bilgileri.tekrar_araligi_dakika == 0 else f"{onceki_zamanlayici_bilgileri.tekrar_araligi_dakika} dakika"
+        record_log(f"   🔸Tekrar Aralığı      : {tekrar_araligi_str}")
+        record_log(f"   🔸Mevcut Tekrar #     : {onceki_zamanlayici_bilgileri.tekrar_mevcut_calisma}")
+        record_log(f"   🔸Toplam Tekrar Sayısı: {onceki_zamanlayici_bilgileri.tekrar_toplam_sayi}")
+
+        # Bekleme modunu kapat ve asıl zamanlayıcıyı başlat
+        onceki_zamanlayici_bilgileri.bekleme_modunda = False
+        onceki_zamanlayici_bilgileri.sure = onceki_zamanlayici_bilgileri.dakika_ayari * 60
+        onceki_zamanlayici_bilgileri.toplam_sure = onceki_zamanlayici_bilgileri.dakika_ayari * 60
+        
+        # Widget'ı güncelle
+        self.guncelle_zamanlayici_widget_arayuzu(onceki_zamanlayici_bilgileri)
+        self.ayarlari_kaydet()
 
     def alarm_cal(self, aciklama, alarm_dosyasi="alarm-01.mp3"):
         """Alarmı çal ve bildirim göster"""
