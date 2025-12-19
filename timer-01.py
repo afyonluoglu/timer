@@ -72,6 +72,77 @@ LOG_DOSYASI = os.path.join(VERI_KLASORU, "zamanlayici_log.txt")
 os.makedirs(VERI_KLASORU, exist_ok=True)
 
 
+class Kronometre:
+    """Kronometre sınıfı - yukarı doğru sayan zamanlayıcı"""
+    def __init__(self, id, isim, baslama_zamani=None):
+        self.id = id
+        self.isim = isim
+        self.gecen_sure = 0  # saniye cinsinden geçen süre
+        self.calisma_durumu = True  # True: çalışıyor, False: duraklatılmış
+        self.baslama_zamani = baslama_zamani or datetime.datetime.now()
+        self.turlar = []  # Tur zamanları listesi [(tur_no, gecen_sure, tur_suresi), ...]
+        self.son_tur_suresi = 0  # Son tur için referans süre
+        
+    def get_formatted_time(self):
+        """Geçen süreyi saat:dakika:saniye formatında döndürür"""
+        saat = self.gecen_sure // 3600
+        dakika = (self.gecen_sure % 3600) // 60
+        saniye = self.gecen_sure % 60
+        return f"{saat:02d}:{dakika:02d}:{saniye:02d}"
+    
+    def tur_ekle(self):
+        """Yeni tur ekler"""
+        tur_no = len(self.turlar) + 1
+        tur_suresi = self.gecen_sure - self.son_tur_suresi
+        self.turlar.append((tur_no, self.gecen_sure, tur_suresi))
+        self.son_tur_suresi = self.gecen_sure
+        return tur_no, self.gecen_sure, tur_suresi
+    
+    def sifirla(self):
+        """Kronometreyi sıfırlar"""
+        self.gecen_sure = 0
+        self.turlar = []
+        self.son_tur_suresi = 0
+        self.baslama_zamani = datetime.datetime.now()
+    
+    def to_dict(self):
+        """Kronometreyi sözlük olarak kaydetmek için"""
+        return {
+            'id': self.id,
+            'isim': self.isim,
+            'gecen_sure': self.gecen_sure,
+            'calisma_durumu': self.calisma_durumu,
+            'baslama_zamani': self.baslama_zamani.isoformat(),
+            'turlar': self.turlar,
+            'son_tur_suresi': self.son_tur_suresi,
+            'son_guncelleme_zamani': datetime.datetime.now().isoformat()
+        }
+    
+    @classmethod
+    def from_dict(cls, data):
+        """Sözlükten kronometre oluşturmak için"""
+        kronometre = cls(
+            id=data['id'],
+            isim=data['isim'],
+            baslama_zamani=datetime.datetime.fromisoformat(data['baslama_zamani'])
+        )
+        kronometre.gecen_sure = data['gecen_sure']
+        kronometre.calisma_durumu = data.get('calisma_durumu', True)
+        kronometre.turlar = data.get('turlar', [])
+        kronometre.son_tur_suresi = data.get('son_tur_suresi', 0)
+        
+        # Program kapalıyken geçen süreyi ekle (sadece çalışıyorsa)
+        if kronometre.calisma_durumu and 'son_guncelleme_zamani' in data:
+            try:
+                son_guncelleme = datetime.datetime.fromisoformat(data['son_guncelleme_zamani'])
+                gecen = int((datetime.datetime.now() - son_guncelleme).total_seconds())
+                kronometre.gecen_sure += gecen
+            except Exception:
+                pass
+        
+        return kronometre
+
+
 class Zamanlayici:
     def __init__(self, id, dakika_ayari, temel_aciklama, alarm="alarm-01.mp3", baslama_zamani_ilk_kurulum=None,
                  tekrar_toplam_sayi=1, tekrar_mevcut_calisma=1, tekrar_araligi_dakika=10,
@@ -183,7 +254,7 @@ class AnaUygulamaPenceresi(QMainWindow):
         zamanlayici_menu = menubar.addMenu('Zamanlayıcı')
         
         # Yeni zamanlayıcı eylemi
-        yeni_zamanlayici_eylem = QAction('Yeni Zamanlayıcı Başlat', self)
+        yeni_zamanlayici_eylem = QAction('Yeni Zamanlayıcı', self)
         yeni_zamanlayici_eylem.setShortcut('Ctrl+T')
         yeni_zamanlayici_eylem.triggered.connect(self.zamanlayici_widget.yeni_zamanlayici_baslat)
         zamanlayici_menu.addAction(yeni_zamanlayici_eylem)
@@ -306,10 +377,38 @@ class AnaUygulamaPenceresi(QMainWindow):
         self.tetris_pencere.show()
 
     def closeEvent(self, event):
+        # Aktif kronometre kontrolü
+        aktif_kronometre_sayisi = len(self.zamanlayici_widget.aktif_kronometreler)
+        if aktif_kronometre_sayisi > 0:
+            # Çalışan kronometrelerin listesini oluştur
+            kronometre_bilgileri = []
+            for k in self.zamanlayici_widget.aktif_kronometreler:
+                durum = "çalışıyor" if k.calisma_durumu else "duraklatılmış"
+                kronometre_bilgileri.append(f"  • {k.isim}: {k.get_formatted_time()} ({durum})")
+            
+            kronometre_listesi = "\n".join(kronometre_bilgileri)
+            
+            cevap = QMessageBox.warning(
+                self,
+                "Aktif Kronometre Uyarısı",
+                f"Aktif {aktif_kronometre_sayisi} adet kronometre var:\n\n{kronometre_listesi}\n\n"
+                "Programı kapatmak istediğinizden emin misiniz?\n"
+                "(Kronometreler kaydedilecek ve program tekrar açıldığında devam edecektir)",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No
+            )
+            
+            if cevap == QMessageBox.No:
+                event.ignore()
+                return
+        
         # Program kapatılırken ayarları kaydet
         # record_log("🚩 [KAPANIŞ] Program kapatılıyor, ayarlar kaydediliyor...")
         for timer in self.zamanlayici_widget.aktif_zamanlayicilar:
             record_log(f"☑️ [KAPANIŞ] Timer {timer.id} - '{timer.temel_aciklama}': Kalan süre {format_time(timer.sure)} kaydediliyor")
+        
+        for krono in self.zamanlayici_widget.aktif_kronometreler:
+            record_log(f"☑️ [KAPANIŞ] Kronometre '{krono.isim}': Geçen süre {krono.get_formatted_time()} kaydediliyor")
 
         self.zamanlayici_widget.helpers.ayarlari_kaydet()
         event.accept()
@@ -345,6 +444,10 @@ class ZamanlayiciUygulamasi(QWidget):
         # Hatırlatıcı değişkenleri
         self.hatirlaticilar = []
         self.hatirlatici_id_sayaci = 0
+
+        # Kronometre değişkenleri
+        self.aktif_kronometreler = []
+        self.kronometre_id_sayaci = 0
 
         # Helper sınıfını başlat
         self.helpers = TimerHelpers(self)
@@ -430,14 +533,14 @@ class ZamanlayiciUygulamasi(QWidget):
         # Aktif zamanlayıcılar başlığı ve saat
         aktif_baslik_duzen = QHBoxLayout()
 
-        aktif_baslik = QLabel("Aktif Zamanlayıcılar:")
+        aktif_baslik = QLabel("Aktif Sayaçlar:")
         aktif_baslik.setFont(QFont("Arial", 12, QFont.Bold))
         aktif_baslik_duzen.addWidget(aktif_baslik)
 
         # Boşluk ekle
         aktif_baslik_duzen.addStretch()
 
-        self.baslat_dugme = QPushButton("⏱️ Yeni Zamanlayıcı Başlat")
+        self.baslat_dugme = QPushButton("⏱️ Yeni Zamanlayıcı")
         self.baslat_dugme.setFont(QFont("Arial", 11, QFont.Bold))
         self.baslat_dugme.setFixedHeight(40) 
         self.baslat_dugme.setStyleSheet("""
@@ -455,6 +558,25 @@ class ZamanlayiciUygulamasi(QWidget):
         self.baslat_dugme.clicked.connect(self.yeni_zamanlayici_baslat)
         self.baslat_dugme.setCursor(Qt.PointingHandCursor)
         aktif_baslik_duzen.addWidget(self.baslat_dugme)
+
+        # Yeni Kronometre düğmesi
+        self.kronometre_dugme = QPushButton("⏱️ Yeni Kronometre")
+        self.kronometre_dugme.setFont(QFont("Arial", 11, QFont.Bold))
+        self.kronometre_dugme.setFixedHeight(40)
+        self.kronometre_dugme.setStyleSheet("""
+            QPushButton {
+                background-color: #2e7d32;
+                color: white;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #81c784;
+                color: #1b5e20;
+            }
+        """)
+        self.kronometre_dugme.clicked.connect(self.yeni_kronometre_baslat)
+        self.kronometre_dugme.setCursor(Qt.PointingHandCursor)
+        aktif_baslik_duzen.addWidget(self.kronometre_dugme)
 
         # Boşluk ekle
         aktif_baslik_duzen.addStretch()
@@ -1069,6 +1191,293 @@ class ZamanlayiciUygulamasi(QWidget):
         zamanlayici_cerceve.setLayout(zamanlayici_duzen)
         self.aktif_zamanlayicilar_alan.addWidget(zamanlayici_cerceve)
 
+    # ===================== KRONOMETRE FONKSİYONLARI =====================
+    
+    def yeni_kronometre_baslat(self):
+        """Yeni kronometre başlatmak için isim soran dialog açar"""
+        isim, ok = QInputDialog.getText(
+            self, 
+            "Yeni Kronometre",
+            "Kronometre için bir isim girin:",
+            QLineEdit.Normal,
+            f"Kronometre {self.kronometre_id_sayaci + 1}"
+        )
+        
+        if ok and isim.strip():
+            self.kronometre_id_sayaci += 1
+            yeni_kronometre = Kronometre(
+                id=self.kronometre_id_sayaci,
+                isim=isim.strip()
+            )
+            self.aktif_kronometreler.append(yeni_kronometre)
+            self.kronometre_widget_olustur(yeni_kronometre)
+            self.ayarlari_kaydet()
+            record_log(f"⏱️ Yeni kronometre başlatıldı: {yeni_kronometre.isim}")
+            show_toast(self, 'Yeni Kronometre', f"{yeni_kronometre.isim} başlatıldı", 5000)
+
+    def kronometre_widget_olustur(self, kronometre):
+        """Kronometre için widget oluşturur"""
+        # ClickableFrame kullan
+        kronometre_cerceve = ClickableFrame(f"kronometre_{kronometre.id}")
+        kronometre_cerceve.setObjectName(f"kronometre_{kronometre.id}")
+        kronometre_cerceve.setFrameStyle(QFrame.Box | QFrame.Raised)
+        kronometre_cerceve.setLineWidth(1)
+        
+        # Sağ tık menüsünü etkinleştir
+        kronometre_cerceve.setContextMenuPolicy(Qt.CustomContextMenu)
+        kronometre_cerceve.customContextMenuRequested.connect(
+            lambda pos, k_id=kronometre.id: self.kronometre_sag_tik_menu(pos, k_id)
+        )
+        
+        # Kronometre için yeşil tema
+        if kronometre.calisma_durumu:
+            kronometre_cerceve.setStyleSheet("background-color: #e8f5e9; border: 2px solid #4caf50;")
+        else:
+            kronometre_cerceve.setStyleSheet("background-color: #fff8e1; border: 2px solid #ff9800;")
+        
+        kronometre_duzen = QHBoxLayout()
+        
+        # Kronometre ikonu
+        ikon_label = QLabel("⏱️")
+        ikon_label.setStyleSheet("font-size: 24px;")
+        ikon_label.setObjectName(f"krono_ikon_{kronometre.id}")
+        kronometre_duzen.addWidget(ikon_label)
+        
+        # İsim etiketi
+        isim_label = QLabel(kronometre.isim)
+        isim_label.setMinimumWidth(150)
+        isim_label.setObjectName(f"krono_isim_{kronometre.id}")
+        isim_label.setFont(QFont("Arial", 10, QFont.Bold))
+        kronometre_duzen.addWidget(isim_label)
+        
+        # Geçen süre etiketi
+        sure_label = QLabel(kronometre.get_formatted_time())
+        sure_label.setObjectName(f"krono_sure_{kronometre.id}")
+        sure_label.setAlignment(Qt.AlignCenter)
+        sure_label.setFont(QFont("Consolas", 14, QFont.Bold))
+        sure_label.setStyleSheet("color: #2e7d32;")
+        kronometre_duzen.addWidget(sure_label)
+        
+        # Tur bilgisi etiketi
+        tur_label = QLabel("")
+        tur_label.setObjectName(f"krono_tur_{kronometre.id}")
+        tur_label.setMinimumWidth(80)
+        if kronometre.turlar:
+            son_tur = kronometre.turlar[-1]
+            tur_label.setText(f"Tur {son_tur[0]}")
+        kronometre_duzen.addWidget(tur_label)
+        
+        # Tur ekle düğmesi
+        tur_dugme = QPushButton("🏁 Tur")
+        tur_dugme.setObjectName(f"krono_tur_btn_{kronometre.id}")
+        tur_dugme.clicked.connect(lambda checked, k_id=kronometre.id: self.kronometre_tur_ekle(k_id))
+        tur_dugme.setToolTip("Tur ekle")
+        kronometre_duzen.addWidget(tur_dugme)
+        
+        # Durdur/Devam düğmesi
+        durum_metni = "⏸️ Duraklat" if kronometre.calisma_durumu else "▶️ Devam"
+        durdur_dugme = QPushButton(durum_metni)
+        durdur_dugme.setObjectName(f"krono_durdur_{kronometre.id}")
+        durdur_dugme.clicked.connect(lambda checked, k_id=kronometre.id: self.kronometre_durdur_devam(k_id))
+        kronometre_duzen.addWidget(durdur_dugme)
+        
+        # Kapat düğmesi
+        kapat_dugme = QPushButton("❌ Kapat")
+        kapat_dugme.setObjectName(f"krono_kapat_{kronometre.id}")
+        kapat_dugme.clicked.connect(lambda checked, k_id=kronometre.id: self.kronometre_kapat(k_id))
+        kapat_dugme.setStyleSheet("background-color: #ffcdd2;")
+        kronometre_duzen.addWidget(kapat_dugme)
+        
+        kronometre_cerceve.setLayout(kronometre_duzen)
+        self.aktif_zamanlayicilar_alan.addWidget(kronometre_cerceve)
+
+    def kronometre_durdur_devam(self, kronometre_id):
+        """Kronometreyi durdurur veya devam ettirir"""
+        for kronometre in self.aktif_kronometreler:
+            if kronometre.id == kronometre_id:
+                kronometre.calisma_durumu = not kronometre.calisma_durumu
+                
+                # Widget'ı güncelle
+                cerceve = self.findChild(QFrame, f"kronometre_{kronometre_id}")
+                if cerceve:
+                    durdur_dugme = cerceve.findChild(QPushButton, f"krono_durdur_{kronometre_id}")
+                    if durdur_dugme:
+                        if kronometre.calisma_durumu:
+                            durdur_dugme.setText("⏸️ Duraklat")
+                            cerceve.setStyleSheet("background-color: #e8f5e9; border: 2px solid #4caf50;")
+                        else:
+                            durdur_dugme.setText("▶️ Devam")
+                            cerceve.setStyleSheet("background-color: #fff8e1; border: 2px solid #ff9800;")
+                
+                durum = "devam ediyor" if kronometre.calisma_durumu else "duraklatıldı"
+                record_log(f"⏱️ Kronometre '{kronometre.isim}' {durum}")
+                self.ayarlari_kaydet()
+                break
+
+    def kronometre_kapat(self, kronometre_id):
+        """Kronometreyi kapatır"""
+        for i, kronometre in enumerate(self.aktif_kronometreler):
+            if kronometre.id == kronometre_id:
+                # Onay sor
+                cevap = QMessageBox.question(
+                    self,
+                    "Kronometreyi Kapat",
+                    f"'{kronometre.isim}' kronometresini kapatmak istiyor musunuz?\n\nGeçen süre: {kronometre.get_formatted_time()}",
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.No
+                )
+                
+                if cevap == QMessageBox.Yes:
+                    # Widget'ı kaldır
+                    cerceve = self.findChild(QFrame, f"kronometre_{kronometre_id}")
+                    if cerceve:
+                        self.aktif_zamanlayicilar_alan.removeWidget(cerceve)
+                        cerceve.deleteLater()
+                    
+                    # Listeden kaldır
+                    self.aktif_kronometreler.pop(i)
+                    record_log(f"⏱️ Kronometre '{kronometre.isim}' kapatıldı (Süre: {kronometre.get_formatted_time()})")
+                    self.ayarlari_kaydet()
+                break
+
+    def kronometre_tur_ekle(self, kronometre_id):
+        """Kronometreye tur ekler"""
+        for kronometre in self.aktif_kronometreler:
+            if kronometre.id == kronometre_id:
+                tur_no, toplam_sure, tur_suresi = kronometre.tur_ekle()
+                
+                # Tur etiketini güncelle
+                cerceve = self.findChild(QFrame, f"kronometre_{kronometre_id}")
+                if cerceve:
+                    tur_label = cerceve.findChild(QLabel, f"krono_tur_{kronometre_id}")
+                    if tur_label:
+                        tur_label.setText(f"Tur {tur_no}")
+                
+                # Tur bilgisini formatla
+                tur_sure_str = f"{tur_suresi // 3600:02d}:{(tur_suresi % 3600) // 60:02d}:{tur_suresi % 60:02d}"
+                record_log(f"🏁 Kronometre '{kronometre.isim}' - Tur {tur_no}: {tur_sure_str}")
+                show_toast(self, f"Tur {tur_no}", f"{kronometre.isim}: {tur_sure_str}", 3000)
+                self.ayarlari_kaydet()
+                break
+
+    def kronometre_sag_tik_menu(self, position, kronometre_id):
+        """Kronometre için sağ tık context menüsü"""
+        kronometre = None
+        for k in self.aktif_kronometreler:
+            if k.id == kronometre_id:
+                kronometre = k
+                break
+        
+        if not kronometre:
+            return
+        
+        menu = QMenu(self)
+        
+        # Tur ekle
+        tur_action = menu.addAction("🏁 Tur Ekle")
+        
+        # Turları göster (varsa)
+        if kronometre.turlar:
+            turlar_menu = menu.addMenu("📋 Turları Göster")
+            for tur in kronometre.turlar:
+                tur_no, toplam, tur_suresi = tur
+                tur_str = f"{tur_suresi // 3600:02d}:{(tur_suresi % 3600) // 60:02d}:{tur_suresi % 60:02d}"
+                toplam_str = f"{toplam // 3600:02d}:{(toplam % 3600) // 60:02d}:{toplam % 60:02d}"
+                turlar_menu.addAction(f"Tur {tur_no}: {tur_str} (Toplam: {toplam_str})")
+        
+        menu.addSeparator()
+        
+        # Sıfırla
+        sifirla_action = menu.addAction("🔄 Sıfırla")
+        
+        # İsim değiştir
+        isim_action = menu.addAction("✏️ İsmi Değiştir")
+        
+        menu.addSeparator()
+        
+        # Durdur/Devam
+        if kronometre.calisma_durumu:
+            durdur_action = menu.addAction("⏸️ Duraklat")
+        else:
+            durdur_action = menu.addAction("▶️ Devam Et")
+        
+        # Kapat
+        kapat_action = menu.addAction("❌ Kronometreyi Kapat")
+        
+        # Menüyü göster
+        cerceve = self.findChild(QFrame, f"kronometre_{kronometre_id}")
+        if cerceve:
+            action = menu.exec_(cerceve.mapToGlobal(position))
+            
+            if action == tur_action:
+                self.kronometre_tur_ekle(kronometre_id)
+            elif action == sifirla_action:
+                self.kronometre_sifirla(kronometre_id)
+            elif action == isim_action:
+                self.kronometre_isim_degistir(kronometre_id)
+            elif action == durdur_action:
+                self.kronometre_durdur_devam(kronometre_id)
+            elif action == kapat_action:
+                self.kronometre_kapat(kronometre_id)
+
+    def kronometre_sifirla(self, kronometre_id):
+        """Kronometreyi sıfırlar"""
+        for kronometre in self.aktif_kronometreler:
+            if kronometre.id == kronometre_id:
+                cevap = QMessageBox.question(
+                    self,
+                    "Kronometreyi Sıfırla",
+                    f"'{kronometre.isim}' kronometresini sıfırlamak istiyor musunuz?",
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.No
+                )
+                
+                if cevap == QMessageBox.Yes:
+                    kronometre.sifirla()
+                    
+                    # Widget'ı güncelle
+                    cerceve = self.findChild(QFrame, f"kronometre_{kronometre_id}")
+                    if cerceve:
+                        sure_label = cerceve.findChild(QLabel, f"krono_sure_{kronometre_id}")
+                        if sure_label:
+                            sure_label.setText(kronometre.get_formatted_time())
+                        tur_label = cerceve.findChild(QLabel, f"krono_tur_{kronometre_id}")
+                        if tur_label:
+                            tur_label.setText("")
+                    
+                    record_log(f"🔄 Kronometre '{kronometre.isim}' sıfırlandı")
+                    self.ayarlari_kaydet()
+                break
+
+    def kronometre_isim_degistir(self, kronometre_id):
+        """Kronometre ismini değiştirir"""
+        for kronometre in self.aktif_kronometreler:
+            if kronometre.id == kronometre_id:
+                yeni_isim, ok = QInputDialog.getText(
+                    self,
+                    "İsim Değiştir",
+                    "Yeni isim girin:",
+                    QLineEdit.Normal,
+                    kronometre.isim
+                )
+                
+                if ok and yeni_isim.strip():
+                    eski_isim = kronometre.isim
+                    kronometre.isim = yeni_isim.strip()
+                    
+                    # Widget'ı güncelle
+                    cerceve = self.findChild(QFrame, f"kronometre_{kronometre_id}")
+                    if cerceve:
+                        isim_label = cerceve.findChild(QLabel, f"krono_isim_{kronometre_id}")
+                        if isim_label:
+                            isim_label.setText(kronometre.isim)
+                    
+                    record_log(f"✏️ Kronometre ismi değiştirildi: '{eski_isim}' -> '{kronometre.isim}'")
+                    self.ayarlari_kaydet()
+                break
+
+    # ===================== KRONOMETRE FONKSİYONLARI SONU =====================
+
     def handle_timer_double_click_event(self, timer_object_name_str):
         """Çift tıklanan zamanlayıcı için düzenleme diyalogunu açar."""
         try:
@@ -1261,6 +1670,18 @@ class ZamanlayiciUygulamasi(QWidget):
         simdiki_zaman = QTime.currentTime()
         saat_metni = simdiki_zaman.toString("hh:mm:ss")
         self.saat_label.setText(saat_metni)
+
+        # Kronometreleri güncelle
+        for kronometre in self.aktif_kronometreler:
+            if kronometre.calisma_durumu:
+                kronometre.gecen_sure += 1
+                
+                # Widget'ı güncelle
+                cerceve = self.findChild(QFrame, f"kronometre_{kronometre.id}")
+                if cerceve:
+                    sure_label = cerceve.findChild(QLabel, f"krono_sure_{kronometre.id}")
+                    if sure_label:
+                        sure_label.setText(kronometre.get_formatted_time())
 
         ayarlar_degisti = False  # Ayarların değişip değişmediğini takip et
         tamamlanan_zamanlayicilar = []  # Tamamlanan zamanlayıcıları geçici bir listeye al
@@ -1560,6 +1981,18 @@ class ZamanlayiciUygulamasi(QWidget):
 
                             except Exception as e:
                                 record_log(f"❗ Zamanlayıcı yüklenirken hata (iç döngü): {str(e)} - Veri: {z_veri}", "error")
+                    
+                    # Kronometreleri yükle
+                    self.kronometre_id_sayaci = veri.get('kronometre_id_sayaci', 0)
+                    if 'aktif_kronometreler' in veri:
+                        for k_veri in veri['aktif_kronometreler']:
+                            try:
+                                k = Kronometre.from_dict(k_veri)
+                                self.aktif_kronometreler.append(k)
+                                self.kronometre_widget_olustur(k)
+                                record_log(f"⏱️ [YÜKLE] Kronometre '{k.isim}' yüklendi, geçen süre: {k.get_formatted_time()}")
+                            except Exception as e:
+                                record_log(f"❗ Kronometre yüklenirken hata: {str(e)} - Veri: {k_veri}", "error")
             else:
                 self.son_sure = 5
                 self.gecmis_listesi = []

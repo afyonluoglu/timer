@@ -1,6 +1,7 @@
 import os
 import json
 import datetime
+import random
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QComboBox, QGridLayout, QAction, QMessageBox,
@@ -11,6 +12,8 @@ from PyQt5.QtGui import QFont
 from PyQt5.QtCore import QTimer, Qt
 
 MAX_DELETE_COUNT = 15  # Maksimum silme hakkı
+MAX_SCORES_PER_DIFFICULTY = 15  # Her zorluk seviyesi için tutulacak maksimum skor
+MAX_MISTAKES = 3  # Maksimum hata hakkı
 
 class SudokuHucre:
     def __init__(self):
@@ -28,11 +31,13 @@ class SudokuOyunu(QMainWindow):
     SECILI_ARKAPLAN = "#60EB60"  # Açık yeşil (Light Green)
     KULLANICI_ARKAPLAN = "#C4FF85"  # Açık yeşil-sarı
     NORMAL_ARKAPLAN = "white"
+    VURGULU_ARKAPLAN = "#E8E8E8"  # Aynı satır/sütun/bölge için açık gri
+    AYNI_SAYI_ARKAPLAN = "#FFD700"  # Aynı sayı için altın sarısı
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Sudoku")
-        self.resize(600, 620)
+        self.setWindowTitle("Sudoku Profesyonel")
+        self.resize(650, 720)
         
         # Oyun değişkenleri
         self.secili_hucre = None
@@ -48,6 +53,15 @@ class SudokuOyunu(QMainWindow):
         self.ipucu_sayisi = 0
         self.silme_sayisi = 0
         self.kontrol_sayisi = 0
+        self.hata_sayisi = 0  # Yanlış girilen sayı sayısı
+        
+        # Geri al/ileri al için geçmiş
+        self.gecmis = []  # [(satir, sutun, eski_deger, yeni_deger), ...]
+        self.gecmis_index = -1
+        
+        # Not modu
+        self.not_modu = False
+        self.notlar = [[set() for _ in range(9)] for _ in range(9)]  # Her hücre için notlar
         
         # Merkezi widget
         merkez_widget = QWidget()
@@ -97,6 +111,10 @@ class SudokuOyunu(QMainWindow):
         self.silme_hakki_label = QLabel(f"Silme Hakkı: {self.silme_hakki}")
         istatistik_duzen.addWidget(self.silme_hakki_label)
         
+        # Hata sayısı göstergesi
+        self.hata_label = QLabel(f"Hata: 0/{MAX_MISTAKES}")
+        istatistik_duzen.addWidget(self.hata_label)
+        
         # İpucu sayısı göstergesi
         self.ipucu_label = QLabel("İpucu: 0")
         istatistik_duzen.addWidget(self.ipucu_label)
@@ -104,6 +122,10 @@ class SudokuOyunu(QMainWindow):
         # Kontrol sayısı göstergesi
         self.kontrol_label = QLabel("Kontrol: 0")
         istatistik_duzen.addWidget(self.kontrol_label)
+        
+        # Not modu göstergesi
+        self.not_modu_label = QLabel("Not: Kapalı")
+        istatistik_duzen.addWidget(self.not_modu_label)
         
         # Sola hizalamak için stretch ekle
         istatistik_duzen.addStretch()
@@ -170,6 +192,35 @@ class SudokuOyunu(QMainWindow):
         
         ana_duzen.addLayout(alt_duzen)
         
+        # İkinci alt satır - Ek butonlar
+        alt_duzen2 = QHBoxLayout()
+        
+        # Geri Al butonu
+        geri_al_btn = QPushButton("↩ Geri Al")
+        geri_al_btn.clicked.connect(self.geri_al)
+        geri_al_btn.setToolTip("Son hamleyi geri al (Ctrl+Z)")
+        alt_duzen2.addWidget(geri_al_btn)
+        
+        # İleri Al butonu
+        ileri_al_btn = QPushButton("↪ İleri Al")
+        ileri_al_btn.clicked.connect(self.ileri_al)
+        ileri_al_btn.setToolTip("Geri alınan hamleyi tekrar yap (Ctrl+Y)")
+        alt_duzen2.addWidget(ileri_al_btn)
+        
+        # Not Modu butonu
+        self.not_modu_btn = QPushButton("📝 Not Modu")
+        self.not_modu_btn.setCheckable(True)
+        self.not_modu_btn.clicked.connect(self.not_modu_degistir)
+        self.not_modu_btn.setToolTip("Not modu aç/kapat (N tuşu)")
+        alt_duzen2.addWidget(self.not_modu_btn)
+        
+        # Notları Temizle butonu
+        notlari_temizle_btn = QPushButton("🗑️ Notları Temizle")
+        notlari_temizle_btn.clicked.connect(self.tum_notlari_temizle)
+        alt_duzen2.addWidget(notlari_temizle_btn)
+        
+        ana_duzen.addLayout(alt_duzen2)
+        
         # Menü oluştur
         self.menu_olustur()
         
@@ -215,6 +266,26 @@ class SudokuOyunu(QMainWindow):
         yardim_menu.addAction(nasil_oynanir)
     
     def keyPressEvent(self, event):
+        # Ctrl+Z: Geri al
+        if event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_Z:
+            self.geri_al()
+            return
+        
+        # Ctrl+Y: İleri al
+        if event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_Y:
+            self.ileri_al()
+            return
+        
+        # N: Not modu aç/kapat
+        if event.key() == Qt.Key_N:
+            self.not_modu_degistir()
+            return
+        
+        # Ok tuşları ile hücre hareketi
+        if event.key() in [Qt.Key_Up, Qt.Key_Down, Qt.Key_Left, Qt.Key_Right]:
+            self.ok_tusu_hareketi(event.key())
+            return
+        
         if not self.secili_hucre or not self.oyun_aktif:
             return
         
@@ -222,16 +293,46 @@ class SudokuOyunu(QMainWindow):
         
         if event.key() in [Qt.Key_1, Qt.Key_2, Qt.Key_3, Qt.Key_4, Qt.Key_5,
                           Qt.Key_6, Qt.Key_7, Qt.Key_8, Qt.Key_9]:
-            # Sayı girişi
+            sayi = int(event.text())
+            
+            # Not modu aktifse nota ekle
+            if self.not_modu:
+                if not self.tahta[satir][sutun].sabit and self.tahta[satir][sutun].deger == 0:
+                    if sayi in self.notlar[satir][sutun]:
+                        self.notlar[satir][sutun].remove(sayi)
+                    else:
+                        self.notlar[satir][sutun].add(sayi)
+                    self.hucreyi_guncelle(satir, sutun)
+                return
+            
+            # Normal sayı girişi
             if not self.tahta[satir][sutun].sabit:
-                sayi = int(event.text())
+                eski_deger = self.tahta[satir][sutun].deger
+                
+                # Geçmişe kaydet (geri al için)
+                self.gecmise_ekle(satir, sutun, eski_deger, sayi)
+                
                 self.tahta[satir][sutun].deger = sayi
+                self.notlar[satir][sutun].clear()  # Sayı girilince notları temizle
                 self.hucre_butonlari[satir][sutun].setText(str(sayi))
                 
-                # Eğer hücre hatalı ise ve doğru sayı girildiyse hatayı temizle
-                if (satir, sutun) in self.hatali_hucreler:
-                    if sayi == self.cozum_tahtasi[satir][sutun]:
+                # Anlık hata kontrolü - yanlış sayı girildiğinde
+                if sayi != self.cozum_tahtasi[satir][sutun]:
+                    self.hata_sayisi += 1
+                    self.hata_label.setText(f"Hata: {self.hata_sayisi}/{MAX_MISTAKES}")
+                    self.hatali_hucreler.add((satir, sutun))
+                    
+                    # Hata limitine ulaşıldıysa oyunu bitir
+                    if self.hata_sayisi >= MAX_MISTAKES:
+                        self.hucre_stilini_guncelle(satir, sutun)
+                        self.oyun_bitti(f"Maksimum hata sayısına ({MAX_MISTAKES}) ulaştınız!")
+                        return
+                else:
+                    # Doğru sayı girildiyse hatalı listesinden çıkar
+                    if (satir, sutun) in self.hatali_hucreler:
                         self.hatali_hucreler.remove((satir, sutun))
+                    # Aynı sayıyı içeren notları bölgeden temizle
+                    self.ilgili_notlari_temizle(satir, sutun, sayi)
                 
                 self.hucre_stilini_guncelle(satir, sutun)
                 
@@ -242,6 +343,9 @@ class SudokuOyunu(QMainWindow):
             # Hücreyi temizle
             if not self.tahta[satir][sutun].sabit and self.tahta[satir][sutun].deger != 0:
                 if self.silme_hakki > 0:
+                    eski_deger = self.tahta[satir][sutun].deger
+                    self.gecmise_ekle(satir, sutun, eski_deger, 0)
+                    
                     self.silme_hakki -= 1
                     self.silme_sayisi += 1  # Silme sayısını artır
                     self.silme_hakki_label.setText(f"Silme Hakkı: {self.silme_hakki}")
@@ -259,6 +363,138 @@ class SudokuOyunu(QMainWindow):
                         self.oyun_bitti("Silme hakkınız bitti!")
                 else:
                     QMessageBox.warning(self, "Uyarı", "Silme hakkınız kalmadı!")
+    
+    def ok_tusu_hareketi(self, key):
+        """Ok tuşları ile hücre hareketi"""
+        if not self.secili_hucre:
+            self.hucre_secildi(0, 0)
+            return
+        
+        satir, sutun = self.secili_hucre
+        
+        if key == Qt.Key_Up and satir > 0:
+            self.hucre_secildi(satir - 1, sutun)
+        elif key == Qt.Key_Down and satir < 8:
+            self.hucre_secildi(satir + 1, sutun)
+        elif key == Qt.Key_Left and sutun > 0:
+            self.hucre_secildi(satir, sutun - 1)
+        elif key == Qt.Key_Right and sutun < 8:
+            self.hucre_secildi(satir, sutun + 1)
+    
+    def gecmise_ekle(self, satir, sutun, eski_deger, yeni_deger):
+        """Bir hamleyi geçmişe ekle"""
+        # Eğer geri alınmış hamleler varsa, onları sil
+        if self.gecmis_index < len(self.gecmis) - 1:
+            self.gecmis = self.gecmis[:self.gecmis_index + 1]
+        
+        self.gecmis.append((satir, sutun, eski_deger, yeni_deger))
+        self.gecmis_index = len(self.gecmis) - 1
+    
+    def geri_al(self):
+        """Son hamleyi geri al"""
+        if not self.oyun_aktif or self.gecmis_index < 0:
+            return
+        
+        satir, sutun, eski_deger, yeni_deger = self.gecmis[self.gecmis_index]
+        self.gecmis_index -= 1
+        
+        # Eski değeri geri yükle
+        self.tahta[satir][sutun].deger = eski_deger
+        if eski_deger == 0:
+            self.hucre_butonlari[satir][sutun].setText("")
+        else:
+            self.hucre_butonlari[satir][sutun].setText(str(eski_deger))
+        
+        # Hatalı listesini güncelle
+        if eski_deger == 0 or eski_deger == self.cozum_tahtasi[satir][sutun]:
+            self.hatali_hucreler.discard((satir, sutun))
+        elif eski_deger != self.cozum_tahtasi[satir][sutun]:
+            self.hatali_hucreler.add((satir, sutun))
+        
+        self.hucre_stilini_guncelle(satir, sutun)
+    
+    def ileri_al(self):
+        """Geri alınan hamleyi tekrar yap"""
+        if not self.oyun_aktif or self.gecmis_index >= len(self.gecmis) - 1:
+            return
+        
+        self.gecmis_index += 1
+        satir, sutun, eski_deger, yeni_deger = self.gecmis[self.gecmis_index]
+        
+        # Yeni değeri uygula
+        self.tahta[satir][sutun].deger = yeni_deger
+        if yeni_deger == 0:
+            self.hucre_butonlari[satir][sutun].setText("")
+        else:
+            self.hucre_butonlari[satir][sutun].setText(str(yeni_deger))
+        
+        # Hatalı listesini güncelle
+        if yeni_deger == 0 or yeni_deger == self.cozum_tahtasi[satir][sutun]:
+            self.hatali_hucreler.discard((satir, sutun))
+        elif yeni_deger != self.cozum_tahtasi[satir][sutun]:
+            self.hatali_hucreler.add((satir, sutun))
+        
+        self.hucre_stilini_guncelle(satir, sutun)
+    
+    def not_modu_degistir(self):
+        """Not modunu aç/kapat"""
+        self.not_modu = not self.not_modu
+        self.not_modu_btn.setChecked(self.not_modu)
+        self.not_modu_label.setText(f"Not: {'Açık' if self.not_modu else 'Kapalı'}")
+    
+    def tum_notlari_temizle(self):
+        """Tüm notları temizle"""
+        if not self.oyun_aktif:
+            return
+        
+        for i in range(9):
+            for j in range(9):
+                self.notlar[i][j].clear()
+                self.hucreyi_guncelle(i, j)
+    
+    def ilgili_notlari_temizle(self, satir, sutun, sayi):
+        """Aynı satır, sütun ve 3x3 bölgedeki ilgili notları temizle"""
+        # Aynı satır
+        for j in range(9):
+            self.notlar[satir][j].discard(sayi)
+            self.hucreyi_guncelle(satir, j)
+        
+        # Aynı sütun
+        for i in range(9):
+            self.notlar[i][sutun].discard(sayi)
+            self.hucreyi_guncelle(i, sutun)
+        
+        # Aynı 3x3 bölge
+        kutu_satir = (satir // 3) * 3
+        kutu_sutun = (sutun // 3) * 3
+        for i in range(kutu_satir, kutu_satir + 3):
+            for j in range(kutu_sutun, kutu_sutun + 3):
+                self.notlar[i][j].discard(sayi)
+                self.hucreyi_guncelle(i, j)
+    
+    def hucreyi_guncelle(self, satir, sutun):
+        """Hücrenin içeriğini güncelle (sayı veya notlar)"""
+        buton = self.hucre_butonlari[satir][sutun]
+        hucre = self.tahta[satir][sutun]
+        
+        if hucre.deger != 0:
+            buton.setText(str(hucre.deger))
+            buton.setFont(QFont('Arial', 16))
+        elif self.notlar[satir][sutun]:
+            # Notları 3x3 grid formatında göster
+            not_metni = ""
+            for n in range(1, 10):
+                if n in self.notlar[satir][sutun]:
+                    not_metni += str(n)
+                else:
+                    not_metni += " "
+                if n % 3 == 0 and n < 9:
+                    not_metni += "\n"
+            buton.setText(not_metni)
+            buton.setFont(QFont('Arial', 8))
+        else:
+            buton.setText("")
+            buton.setFont(QFont('Arial', 16))
 
     def otomatik_kontrol(self):
         """Tüm hücreler doluysa otomatik olarak kontrol et"""
@@ -276,14 +512,41 @@ class SudokuOyunu(QMainWindow):
 
     def hucre_secildi(self, satir, sutun):
         """Bir hücre seçildiğinde çağrılır"""
-        # Önceki seçili hücrenin stilini güncelle
-        if self.secili_hucre:
-            eski_satir, eski_sutun = self.secili_hucre
-            self.hucre_stilini_guncelle(eski_satir, eski_sutun)
+        # Önceki seçili hücre
+        eski_secili = self.secili_hucre
         
         # Yeni hücreyi seç
         self.secili_hucre = (satir, sutun)
-        self.hucre_stilini_guncelle(satir, sutun, secili=True)
+        
+        # Tüm tahtayı yeniden stillendir (vurgulama için)
+        self.tum_hucreleri_guncelle()
+    
+    def tum_hucreleri_guncelle(self):
+        """Tüm hücrelerin stillerini güncelle (vurgulama için)"""
+        for i in range(9):
+            for j in range(9):
+                secili = self.secili_hucre == (i, j)
+                self.hucre_stilini_guncelle(i, j, secili=secili)
+    
+    def hucre_vurgulu_mu(self, satir, sutun):
+        """Hücrenin vurgulanması gerekip gerekmediğini kontrol et"""
+        if not self.secili_hucre:
+            return False, False
+        
+        secili_satir, secili_sutun = self.secili_hucre
+        secili_deger = self.tahta[secili_satir][secili_sutun].deger
+        hucre_deger = self.tahta[satir][sutun].deger
+        
+        # Aynı sayı vurgusu
+        ayni_sayi = secili_deger != 0 and hucre_deger == secili_deger and (satir, sutun) != self.secili_hucre
+        
+        # Aynı satır, sütun veya bölge vurgusu
+        ayni_satir = satir == secili_satir
+        ayni_sutun = sutun == secili_sutun
+        ayni_bolge = (satir // 3 == secili_satir // 3) and (sutun // 3 == secili_sutun // 3)
+        ilgili_hucre = (ayni_satir or ayni_sutun or ayni_bolge) and (satir, sutun) != self.secili_hucre
+        
+        return ayni_sayi, ilgili_hucre
     
     def hucre_stilini_guncelle(self, satir, sutun, secili=False):
         """Hücrenin stilini durumuna göre günceller"""
@@ -296,7 +559,10 @@ class SudokuOyunu(QMainWindow):
         margin_bottom = 2 if satir % 3 == 2 else 0
         margin_right = 2 if sutun % 3 == 2 else 0
         
-        # Öncelik sırası: İpucu > Hatalı > Seçili > Normal
+        # Vurgulama kontrolü
+        ayni_sayi, ilgili_hucre = self.hucre_vurgulu_mu(satir, sutun)
+        
+        # Öncelik sırası: İpucu > Hatalı > Seçili > Aynı Sayı > İlgili Hücre > Normal
         if (satir, sutun) in self.ipucu_hucreleri:
             # İpucu hücreleri - koyu yeşil arkaplan, beyaz yazı
             stil = f"""
@@ -334,6 +600,38 @@ class SudokuOyunu(QMainWindow):
                     margin: {margin_top}px {margin_left}px {margin_bottom}px {margin_right}px;
                 }}
             """
+        elif ayni_sayi:
+            # Aynı sayıya sahip hücreler - altın sarısı arkaplan
+            if hucre.sabit:
+                renk = self.SABIT_RENK
+            else:
+                renk = self.KULLANICI_RENK
+            
+            stil = f"""
+                QPushButton {{
+                    background-color: {self.AYNI_SAYI_ARKAPLAN};
+                    {renk}
+                    border: 1px solid gray;
+                    margin: {margin_top}px {margin_left}px {margin_bottom}px {margin_right}px;
+                }}
+            """
+        elif ilgili_hucre:
+            # İlgili hücreler (aynı satır/sütun/bölge) - açık gri arkaplan
+            if hucre.sabit:
+                renk = self.SABIT_RENK
+            elif hucre.deger != 0:
+                renk = self.KULLANICI_RENK
+            else:
+                renk = ""
+            
+            stil = f"""
+                QPushButton {{
+                    background-color: {self.VURGULU_ARKAPLAN};
+                    {renk}
+                    border: 1px solid gray;
+                    margin: {margin_top}px {margin_left}px {margin_bottom}px {margin_right}px;
+                }}
+            """
         else:
             # Normal hücre
             if hucre.sabit:
@@ -359,22 +657,34 @@ class SudokuOyunu(QMainWindow):
     
     def yeni_oyun(self, puan_sifirla=True):
         """Yeni oyun başlat"""
+        # Zorluk seviyesini combobox'tan al - BU ÇOK ÖNEMLİ!
+        self.zorluk = self.zorluk_combo.currentText()
+        
         # Oyun tahtasını temizle
         for i in range(9):
             for j in range(9):
                 self.tahta[i][j] = SudokuHucre()
                 self.hucre_butonlari[i][j].setText("")
+                self.hucre_butonlari[i][j].setFont(QFont('Arial', 16))
                 self.hucre_butonlari[i][j].setStyleSheet(self.normal_hucre_stili(i, j))
         
         # Hata ve ipucu listelerini temizle
         self.hatali_hucreler.clear()
         self.ipucu_hucreleri.clear()
         
+        # Notları temizle
+        self.notlar = [[set() for _ in range(9)] for _ in range(9)]
+        
+        # Geçmişi temizle
+        self.gecmis = []
+        self.gecmis_index = -1
+        
         # Yeni oyun ise İstatistikleri sıfırla
         if puan_sifirla:
             self.ipucu_sayisi = 0
             self.silme_sayisi = 0
             self.toplam_puan = 0
+            self.hata_sayisi = 0
 
         self.kontrol_sayisi = 0
         self.oynanan_oyun_sayisi = 0
@@ -400,6 +710,7 @@ class SudokuOyunu(QMainWindow):
         self.toplam_puan_label.setText("Toplam Puan: 0")
         self.oyun_sayisi_label.setText("Oyun: 1")
         self.silme_hakki_label.setText(f"Silme Hakkı: {self.silme_hakki}")
+        self.hata_label.setText(f"Hata: 0/{MAX_MISTAKES}")
         self.ipucu_label.setText("İpucu: " + str(self.ipucu_sayisi))
         self.kontrol_label.setText("Kontrol: 0")
 
@@ -420,7 +731,6 @@ class SudokuOyunu(QMainWindow):
             silinecek_sayi = 60  # 21 rakam görünür
         
         # Rastgele hücreleri boşalt
-        import random
         dolu_hucreler = [(i, j) for i in range(9) for j in range(9)]
         random.shuffle(dolu_hucreler)
         
@@ -445,7 +755,6 @@ class SudokuOyunu(QMainWindow):
         
         satir, sutun = bos
         sayilar = list(range(1, 10))
-        import random
         random.shuffle(sayilar)  # Rastgele çözüm için sayıları karıştır
         
         for sayi in sayilar:
@@ -628,12 +937,18 @@ class SudokuOyunu(QMainWindow):
             self.tahtayi_guncelle()
             self.hatali_hucreler.clear()
             self.ipucu_hucreleri.clear()
+            self.notlar = [[set() for _ in range(9)] for _ in range(9)]
+            self.gecmis = []
+            self.gecmis_index = -1
             self.silme_sayisi = 0
             self.kontrol_sayisi = 0
+            self.hata_sayisi = 0
+            self.hata_label.setText(f"Hata: 0/{MAX_MISTAKES}")
             self.ipucu_label.setText("İpucu: "+ str(self.ipucu_sayisi))
             self.kontrol_label.setText("Kontrol: 0")
             self.puan = 500
             self.puan_label.setText(f"Puan: {self.puan}")
+            self.oyun_sayisi_label.setText(f"Oyun: {self.oynanan_oyun_sayisi + 1}")
             self.baslangic_zamani = datetime.datetime.now()
             self.timer.start(1000)
             self.oyun_aktif = True
@@ -678,7 +993,6 @@ class SudokuOyunu(QMainWindow):
             return
         
         # Rastgele bir boş hücre seç
-        import random
         satir, sutun = random.choice(bos_hucreler)
         
         # Doğru sayıyı yerleştir
@@ -712,8 +1026,8 @@ class SudokuOyunu(QMainWindow):
             
             zorluk_puanlari = puanlar.get(self.zorluk, [])
             
-            # Eğer 10'dan az kayıt varsa direkt girebilir
-            if len(zorluk_puanlari) < 10:
+            # Eğer MAX_SCORES_PER_DIFFICULTY'den az kayıt varsa direkt girebilir
+            if len(zorluk_puanlari) < MAX_SCORES_PER_DIFFICULTY:
                 return True
             
             # En düşük skoru bul
@@ -818,7 +1132,7 @@ class SudokuOyunu(QMainWindow):
         self.puan_tablosunu_goster()
 
     def puan_kaydet(self, isim, puan, sure=None):
-        """Puanı kaydet ve en iyi 10 skoru tut"""
+        """Puanı kaydet ve en iyi MAX_SCORES_PER_DIFFICULTY skoru tut"""
         puan_dosyasi = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
                                   "sudoku_puanlar.json")
         
@@ -833,7 +1147,7 @@ class SudokuOyunu(QMainWindow):
         elif sure is None:
             sure = 0
         
-        # Yeni puanı ekle
+        # Yeni puanı ekle - self.zorluk kullanarak doğru zorluk seviyesine kaydet
         puanlar[self.zorluk].append({
             'isim': isim,
             'puan': puan,
@@ -841,15 +1155,17 @@ class SudokuOyunu(QMainWindow):
             'ipucu': self.ipucu_sayisi,
             'silme': self.silme_sayisi,
             'kontrol': self.kontrol_sayisi,
+            'hata': self.hata_sayisi,
             'oyun_sayisi': self.oynanan_oyun_sayisi,
+            'zorluk': self.zorluk,  # Zorluk seviyesini de kaydet
             'tarih': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         })
         
-        # Puana göre sırala (yüksekten düşüğe, eşit puanlarda süreye göre küçükten büyüğe) ve en iyi 10'u al
+        # Puana göre sırala (yüksekten düşüğe, eşit puanlarda süreye göre küçükten büyüğe) ve en iyi 15'i al
         puanlar[self.zorluk] = sorted(
             puanlar[self.zorluk], 
             key=lambda x: (-x['puan'], x['sure'])
-        )[:10]
+        )[:MAX_SCORES_PER_DIFFICULTY]
         
         # Puanları kaydet
         with open(puan_dosyasi, 'w', encoding='utf-8') as f:
@@ -938,7 +1254,7 @@ class SudokuOyunu(QMainWindow):
                 zorluk_puanlari = sorted(
                     puanlar.get(zorluk, []), 
                     key=lambda x: (-x['puan'], x['sure'])
-                )[:10]
+                )[:MAX_SCORES_PER_DIFFICULTY]
                 
                 tablo.setRowCount(len(zorluk_puanlari))              
                 
@@ -1082,31 +1398,46 @@ class SudokuOyunu(QMainWindow):
             <li>Her 30 saniyede 1 puan düşer</li>
             <li>Her ipucu kullanımı 10 puan düşürür</li>
             <li>Oyuncunun 15 silme hakkı vardır</li>
-            <li>Silme hakkı biterse oyun sonlanır</li>
+            <li>3 hata hakkı vardır</li>
+            <li>Silme veya hata hakkı biterse oyun sonlanır</li>
             <li>Başarılı oyun bitiminde puanlar toplanır ve yeni oyuna devam edilebilir</li>
         </ul>
         
         <h3>Klavye Kontrolleri:</h3>
         <ul>
-            <li>1-9: Sayı girmek için</li>
-            <li>Delete/Backspace: Hücreyi silmek için (silme hakkı kullanılır)</li>
-            <li>Ok tuşları: Hücreler arası hareket için</li>
+            <li>1-9: Sayı girmek için (Not modu kapalıyken)</li>
+            <li>1-9: Not almak için (Not modu açıkken)</li>
+            <li>Delete/Backspace: Hücreyi silmek için</li>
+            <li>N: Not modunu aç/kapat</li>
+            <li>Ctrl+Z/Y: Geri/İleri al</li>
             <li>F2: Yeni oyun başlatmak için</li>
+            <li>F3: Puan tablosu</li>
+            <li>F4: Oyunu bitir</li>
         </ul>
         
         <h3>Fare Kontrolleri:</h3>
         <ul>
             <li>Sol tık: Hücre seçmek için</li>
-            <li>Sayı girişi: Seçili hücreye klavyeden sayı girin</li>
+            <li>Sağ tık: Olası sayıları görmek için</li>
+        </ul>
+        
+        <h3>Özellikler:</h3>
+        <ul>
+            <li><b>Not Modu:</b> Bir hücreye birden fazla olası sayı yazabilirsiniz</li>
+            <li><b>Geri Al/İleri Al:</b> Hamlelerinizi geri alabilir veya tekrar yapabilirsiniz</li>
+            <li><b>Sayı Vurgulama:</b> Bir sayıya tıkladığınızda aynı sayılar vurgulanır</li>
+            <li><b>Bölge Vurgulama:</b> Seçili hücrenin satırı, sütunu ve bölgesi vurgulanır</li>
         </ul>
         
         <h3>Renkler:</h3>
         <ul>
-            <li>Siyah sayılar: Başlangıçta verilen sabit sayılar</li>
-            <li>Mavi sayılar: Oyuncu tarafından girilen sayılar</li>
-            <li>Koyu yeşil arka plan: İpucu ile doldurulan hücreler (kalıcı)</li>
-            <li>Pembe arka plan: Hatalı sayılar (düzeltilene kadar kalıcı)</li>
-            <li>Açık yeşil arka plan: Seçili hücre</li>
+            <li><span style="color:black; font-weight:bold;">Siyah sayılar:</span> Başlangıçta verilen sabit sayılar</li>
+            <li><span style="color:#4169E1;">Mavi sayılar:</span> Oyuncu tarafından girilen sayılar</li>
+            <li><span style="background-color:#2E8B57; color:white;">Koyu yeşil:</span> İpucu ile doldurulan hücreler</li>
+            <li><span style="background-color:#FFB6C1;">Pembe:</span> Hatalı sayılar</li>
+            <li><span style="background-color:#60EB60;">Açık yeşil:</span> Seçili hücre</li>
+            <li><span style="background-color:#FFD700;">Altın sarısı:</span> Aynı sayıya sahip hücreler</li>
+            <li><span style="background-color:#E8E8E8;">Açık gri:</span> İlgili satır/sütun/bölge</li>
         </ul>
         """
         

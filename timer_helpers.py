@@ -516,7 +516,9 @@ class TimerHelpers:
             'zamanlayici_id_sayaci': self.app.zamanlayici_id_sayaci,
             'hatirlaticilar': [h.to_dict() for h in self.app.hatirlaticilar],
             'hatirlatici_id_sayaci': self.app.hatirlatici_id_sayaci,
-            'aktif_zamanlayicilar': [z.to_dict() for z in self.app.aktif_zamanlayicilar]
+            'aktif_zamanlayicilar': [z.to_dict() for z in self.app.aktif_zamanlayicilar],
+            'aktif_kronometreler': [k.to_dict() for k in self.app.aktif_kronometreler],
+            'kronometre_id_sayaci': self.app.kronometre_id_sayaci
         }
         
         try:

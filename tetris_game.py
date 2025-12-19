@@ -91,7 +91,9 @@ TETROMINOS = {
 
 class HighScoreManager:
     def __init__(self, filename=HIGH_SCORE_FILE):
-        self.filename = filename
+        score_file = os.path.join(os.path.dirname(__file__), filename)
+        self.filename = score_file
+        # print(f"Yüksek skor dosyası: {self.filename}")
         self.scores = self.load_scores()
     
     def load_scores(self):
