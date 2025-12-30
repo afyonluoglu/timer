@@ -1173,17 +1173,31 @@ class ZamanlayiciUygulamasi(QWidget):
             zamanlayici_duzen.addWidget(alarm_etiketi)
         
         self.complete_button = QPushButton("✅ Tamamlandı")
+        self.complete_button.setStyleSheet("background-color: #d1fdb6;")
         self.complete_button.setObjectName(f"tamamlandi_{zamanlayici.id}")
         self.complete_button.clicked.connect(lambda checked, z_id=zamanlayici.id: self.zamanlayici_tamamlandi(z_id)) 
         zamanlayici_duzen.addWidget(self.complete_button)
 
         self.setTime_button = QPushButton("⏱️ Süre Ayarla")
+        self.setTime_button.setStyleSheet("background-color: #b6ddfd;")
         self.setTime_button.setObjectName(f"SetTime_{zamanlayici.id}")
         self.setTime_button.clicked.connect(lambda checked, z_id=zamanlayici.id: self.süre_Degistir(z_id))
         zamanlayici_duzen.addWidget(self.setTime_button)
 
-        durdur_dugme = QPushButton("⏸️ Durdur")
+        # Beklet/Devam Et düğmesi
+        if zamanlayici.calisma_durumu:
+            beklet_dugme = QPushButton("⏸️ Beklet")
+            beklet_dugme.setStyleSheet("background-color: #fff3cd;")
+        else:
+            beklet_dugme = QPushButton("▶️ Devam Et")
+            beklet_dugme.setStyleSheet("background-color: #c8e6c9;")
+        beklet_dugme.setObjectName(f"beklet_{zamanlayici.id}")
+        beklet_dugme.clicked.connect(lambda checked, z_id=zamanlayici.id: self.zamanlayici_beklet_devam(z_id))
+        zamanlayici_duzen.addWidget(beklet_dugme)
+
+        durdur_dugme = QPushButton("❌ Durdur")
         durdur_dugme.setObjectName(f"durdur_{zamanlayici.id}")
+        durdur_dugme.setStyleSheet("background-color: #ffcdd2;")
         durdur_dugme.clicked.connect(lambda checked, z_id=zamanlayici.id: self.zamanlayici_durdur(z_id))
         zamanlayici_duzen.addWidget(durdur_dugme)
 
@@ -1614,6 +1628,44 @@ class ZamanlayiciUygulamasi(QWidget):
         elif alarm_label_widget: # Alarm etiketi olmamalı ama var
             if layout: layout.removeWidget(alarm_label_widget)
             alarm_label_widget.deleteLater()
+
+    def zamanlayici_beklet_devam(self, zamanlayici_id):
+        """Zamanlayıcıyı bekletir veya devam ettirir"""
+        for zamanlayici in self.aktif_zamanlayicilar:
+            if zamanlayici.id == zamanlayici_id:
+                zamanlayici.calisma_durumu = not zamanlayici.calisma_durumu
+                
+                # Widget'ı güncelle
+                cerceve = self.findChild(QFrame, f"zamanlayici_{zamanlayici_id}")
+                if cerceve:
+                    beklet_dugme = cerceve.findChild(QPushButton, f"beklet_{zamanlayici_id}")
+                    durum_ikonu = cerceve.findChild(QLabel, f"durum_ikonu_{zamanlayici_id}")
+                    
+                    if zamanlayici.calisma_durumu:
+                        # Devam ettiriliyor
+                        if beklet_dugme:
+                            beklet_dugme.setText("⏸️ Beklet")
+                            beklet_dugme.setStyleSheet("background-color: #fff3cd;")
+                        if durum_ikonu:
+                            durum_ikonu.setText("▶️")
+                            durum_ikonu.setToolTip("Aktif zamanlayıcı")
+                        cerceve.setStyleSheet("")
+                        record_log(f"▶️ Zamanlayıcı '{zamanlayici.temel_aciklama}' devam ediyor")
+                        show_toast(self, 'Zamanlayıcı', f"{zamanlayici.temel_aciklama} devam ediyor", 3000)
+                    else:
+                        # Bekletiliyor
+                        if beklet_dugme:
+                            beklet_dugme.setText("▶️ Devam Et")
+                            beklet_dugme.setStyleSheet("background-color: #c8e6c9;")
+                        if durum_ikonu:
+                            durum_ikonu.setText("⏸️")
+                            durum_ikonu.setToolTip("Zamanlayıcı bekletildi")
+                        cerceve.setStyleSheet("background-color: #e3f2fd; border: 2px solid #2196f3;")
+                        record_log(f"⏸️ Zamanlayıcı '{zamanlayici.temel_aciklama}' bekletildi")
+                        show_toast(self, 'Zamanlayıcı', f"{zamanlayici.temel_aciklama} bekletildi", 3000)
+                
+                self.ayarlari_kaydet()
+                break
 
     def zamanlayici_durdur(self, zamanlayici_id):
         for i, zamanlayici in enumerate(self.aktif_zamanlayicilar):

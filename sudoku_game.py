@@ -1271,6 +1271,11 @@ class SudokuOyunu(QMainWindow):
                     dakika = sure // 60
                     saniye = sure % 60
 
+                    if tarih != 'Bilinmiyor':
+                        dt = datetime.datetime.strptime(tarih.strip(), "%Y-%m-%d %H:%M:%S")
+                        tarih = dt.strftime("%d-%m-%Y  %H:%M")
+                    # print(tarih)
+
                     tablo.setItem(i, 0, QTableWidgetItem(str(tarih)))
                     tablo.setItem(i, 1, QTableWidgetItem(kayit['isim']))
 
