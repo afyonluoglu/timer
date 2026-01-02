@@ -509,6 +509,14 @@ class TimerHelpers:
     # ========== AYAR YÖNETİMİ ==========
     def ayarlari_kaydet(self):
         """Ayarları ve aktif zamanlayıcıları kaydet"""
+        # Önce mevcut splitter pozisyonlarını al
+        splitter_pozisyonu = None
+        hatirlatici_splitter_pozisyonu = None
+        if hasattr(self.app, 'ana_bolum_splitter'):
+            splitter_pozisyonu = self.app.ana_bolum_splitter.sizes()
+        if hasattr(self.app, 'hatirlatici_splitter'):
+            hatirlatici_splitter_pozisyonu = self.app.hatirlatici_splitter.sizes()
+        
         veri = {
             'son_sure': self.app.son_sure,
             'gecmis': self.app.gecmis_listesi,
@@ -520,6 +528,12 @@ class TimerHelpers:
             'aktif_kronometreler': [k.to_dict() for k in self.app.aktif_kronometreler],
             'kronometre_id_sayaci': self.app.kronometre_id_sayaci
         }
+        
+        # Splitter pozisyonlarını ekle
+        if splitter_pozisyonu:
+            veri['splitter_pozisyonu'] = splitter_pozisyonu
+        if hatirlatici_splitter_pozisyonu:
+            veri['hatirlatici_splitter_pozisyonu'] = hatirlatici_splitter_pozisyonu
         
         try:
             with open(self.app.veri_dosyasi, 'w', encoding='utf-8') as dosya:

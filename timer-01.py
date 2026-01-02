@@ -259,8 +259,14 @@ class AnaUygulamaPenceresi(QMainWindow):
         yeni_zamanlayici_eylem.triggered.connect(self.zamanlayici_widget.yeni_zamanlayici_baslat)
         zamanlayici_menu.addAction(yeni_zamanlayici_eylem)
         
+        # Yeni kronometre eylemi
+        yeni_kronometre_eylem = QAction('Yeni Kronometre', self)
+        yeni_kronometre_eylem.setShortcut('Ctrl+K')
+        yeni_kronometre_eylem.triggered.connect(self.zamanlayici_widget.yeni_kronometre_baslat)
+        zamanlayici_menu.addAction(yeni_kronometre_eylem)
+
         # Yeni hatırlatıcı eylemi
-        yeni_hatirlatici_eylem = QAction('Yeni Hatırlatıcı Ekle', self)
+        yeni_hatirlatici_eylem = QAction('Yeni Hatırlatıcı', self)
         yeni_hatirlatici_eylem.setShortcut('Ctrl+R')
         yeni_hatirlatici_eylem.triggered.connect(self.zamanlayici_widget.hatirlatici_manager.yeni_hatirlatici_ekle)
         zamanlayici_menu.addAction(yeni_hatirlatici_eylem)
@@ -578,7 +584,7 @@ class ZamanlayiciUygulamasi(QWidget):
         self.kronometre_dugme.setCursor(Qt.PointingHandCursor)
         aktif_baslik_duzen.addWidget(self.kronometre_dugme)
 
-        # Boşluk ekle
+        # Boşluk eklef
         aktif_baslik_duzen.addStretch()
 
         # Saat etiketi
@@ -632,7 +638,7 @@ class ZamanlayiciUygulamasi(QWidget):
         
         # QSplitter kullanarak yeniden boyutlandırılabilir alan oluştur
         from PyQt5.QtWidgets import QSplitter
-        hatirlatici_splitter = QSplitter(Qt.Horizontal)
+        self.hatirlatici_splitter = QSplitter(Qt.Horizontal)
         
         # Sol widget - Tüm hatırlatıcılar
         sol_widget = QWidget()
@@ -707,47 +713,50 @@ class ZamanlayiciUygulamasi(QWidget):
         sag_widget.setLayout(sag_duzen)
         
         # Widget'ları splitter'a ekle
-        hatirlatici_splitter.addWidget(sol_widget)
-        hatirlatici_splitter.addWidget(sag_widget)
+        self.hatirlatici_splitter.addWidget(sol_widget)
+        self.hatirlatici_splitter.addWidget(sag_widget)
         
         # Başlangıç oranlarını ayarla (60% sol, 40% sağ)
-        hatirlatici_splitter.setSizes([700, 300])
+        self.hatirlatici_splitter.setSizes([700, 300])
         
-        # Splitter'ın görünümünü özelleştir
-        hatirlatici_splitter.setStyleSheet("""
+        # Splitter'ın görünümünü özelleştir 
+        self.hatirlatici_splitter.setStyleSheet("""
             QSplitter::handle {
-                background-color: #cccccc;
-                width: 3px;
+                background-color: #6392FF;
+                width: 2px;
                 border: 1px solid #aaaaaa;
-                border-radius: 2px;
+                border-radius: 3px;
             }
             QSplitter::handle:hover {
                 background-color: #999999;
             }
         """)
         
+        # Splitter pozisyonu değiştiğinde kaydet
+        self.hatirlatici_splitter.splitterMoved.connect(self.splitter_pozisyonu_kaydet)
+        
         # Hatırlatıcı listelerini yatay olarak yan yana yerleştir
         # hatirlatici_listeler_duzen.addLayout(sol_duzen, 3)  # ekranın %60 (3/5)
         # hatirlatici_listeler_duzen.addLayout(sag_duzen, 2)  # ekranın %40 (2/5)        
         
         # hatirlatici_duzen.addLayout(hatirlatici_listeler_duzen)
-        hatirlatici_duzen.addWidget(hatirlatici_splitter)
-        ana_duzen.addLayout(hatirlatici_duzen)
-
-
-        # NLP Doğal Dil Girişi
-        dogal_dil_duzen = QHBoxLayout()  # Yeni bir yatay düzen oluştur
-        # Doğal dil girişi için alan ve buton ekle
+        hatirlatici_duzen.addWidget(self.hatirlatici_splitter)
+        
+        # NLP Doğal Dil Girişi - Hatırlatıcı bölümüne ekle
+        dogal_dil_duzen = QHBoxLayout()
         self.natural_input = QLineEdit()
         self.natural_input.setPlaceholderText("Doğal dilde hatırlatıcı girin: örn. 'Her gün/hafta/ay saat 12:30'da ara öğün yap   5 dakika/saat/gün sonra Youtube seyret'")
-        dogal_dil_duzen.addWidget(self.natural_input)  # Düzen içine ekle
+        dogal_dil_duzen.addWidget(self.natural_input)
 
         self.natural_input_btn = QPushButton("✨ NLP ile Hatırlatıcı Oluştur")
         self.natural_input_btn.clicked.connect(self.natural_language_timer)
-        dogal_dil_duzen.addWidget(self.natural_input_btn)  # Düzen içine ekle
+        dogal_dil_duzen.addWidget(self.natural_input_btn)
 
-        ana_duzen.addLayout(dogal_dil_duzen)  # Ana düzen içine yatay düzeni ekle
-
+        hatirlatici_duzen.addLayout(dogal_dil_duzen)  # NLP girişini hatırlatıcı bölümüne ekle
+        
+        # Hatırlatıcı bölümünü bir widget içine al
+        hatirlatici_widget = QWidget()
+        hatirlatici_widget.setLayout(hatirlatici_duzen)
 
         # Geçmiş alanı
         gecmis_duzen = QVBoxLayout()
@@ -806,12 +815,39 @@ class ZamanlayiciUygulamasi(QWidget):
         """)
         gecmis_duzen.addWidget(self.gecmis_listesi_widget)
         
-        ana_duzen.addLayout(gecmis_duzen)
-        
         # Geçmiş listesi için sağ tık menüsü
         self.gecmis_listesi_widget.setContextMenuPolicy(Qt.CustomContextMenu)
         self.gecmis_listesi_widget.customContextMenuRequested.connect(self.gecmis_sag_tik_menu)
         
+        # Geçmiş bölümünü bir widget içine al
+        gecmis_widget = QWidget()
+        gecmis_widget.setLayout(gecmis_duzen)
+        
+        # Hatırlatıcılar ve Geçmiş arasında dikey splitter oluştur
+        self.ana_bolum_splitter = QSplitter(Qt.Vertical)
+        self.ana_bolum_splitter.addWidget(hatirlatici_widget)
+        self.ana_bolum_splitter.addWidget(gecmis_widget)
+        
+        # Varsayılan oranları ayarla (50% hatırlatıcı, 50% geçmiş)
+        self.ana_bolum_splitter.setSizes([420, 180])
+        
+        # Splitter'ın görünümünü özelleştir 
+        self.ana_bolum_splitter.setStyleSheet("""
+            QSplitter::handle {
+                background-color: #6392FF;
+                height: 2px;
+                border: 1px solid #666666;
+                border-radius: 2px;
+            }
+            QSplitter::handle:hover {
+                background-color: #950505;
+            }
+        """)
+
+        # Splitter pozisyonu değiştiğinde kaydet
+        self.ana_bolum_splitter.splitterMoved.connect(self.splitter_pozisyonu_kaydet)
+        
+        ana_duzen.addWidget(self.ana_bolum_splitter)
 
         # Favori alanı
         favori_duzen = QVBoxLayout()
@@ -1911,6 +1947,40 @@ class ZamanlayiciUygulamasi(QWidget):
     def ayarlari_kaydet(self):
         return self.helpers.ayarlari_kaydet()
 
+    def splitter_pozisyonu_kaydet(self, pos=None, index=None):
+        """Tüm splitter pozisyonlarını kaydet"""
+        try:
+            ana_splitter_pozisyonu = self.ana_bolum_splitter.sizes()
+            hatirlatici_splitter_pozisyonu = self.hatirlatici_splitter.sizes()
+            
+            # Mevcut ayarları oku
+            ayarlar = {}
+            if os.path.exists(self.veri_dosyasi):
+                with open(self.veri_dosyasi, 'r', encoding='utf-8') as dosya:
+                    ayarlar = json.load(dosya)
+            
+            # Splitter pozisyonlarını güncelle
+            ayarlar['splitter_pozisyonu'] = ana_splitter_pozisyonu
+            ayarlar['hatirlatici_splitter_pozisyonu'] = hatirlatici_splitter_pozisyonu
+            
+            with open(self.veri_dosyasi, 'w', encoding='utf-8') as dosya:
+                json.dump(ayarlar, dosya, ensure_ascii=False)
+        except Exception as e:
+            record_log(f"Splitter pozisyonu kaydedilemedi: {str(e)}", "error")
+
+    def splitter_pozisyonu_yukle(self):
+        """Tüm splitter pozisyonlarını yükle"""
+        try:
+            if os.path.exists(self.veri_dosyasi):
+                with open(self.veri_dosyasi, 'r', encoding='utf-8') as dosya:
+                    veri = json.load(dosya)
+                    if 'splitter_pozisyonu' in veri:
+                        self.ana_bolum_splitter.setSizes(veri['splitter_pozisyonu'])
+                    if 'hatirlatici_splitter_pozisyonu' in veri:
+                        self.hatirlatici_splitter.setSizes(veri['hatirlatici_splitter_pozisyonu'])
+        except Exception as e:
+            record_log(f"Splitter pozisyonu yüklenemedi: {str(e)}", "error")
+
     def ayarlari_yukle(self):
         """Ayarları ve aktif zamanlayıcıları yükle"""
         try:
@@ -2051,7 +2121,10 @@ class ZamanlayiciUygulamasi(QWidget):
                 self.favori_listesi = []  # Favori listesini başlat
 
             # Hatırlatıcı listelerini güncelle
-            self.hatirlatici_manager.hatirlatici_listelerini_guncelle()            
+            self.hatirlatici_manager.hatirlatici_listelerini_guncelle()
+            
+            # Splitter pozisyonunu yükle
+            self.splitter_pozisyonu_yukle()
         except Exception as e:
             record_log(f"❗ Ayarlar yüklenemedi (dış döngü): {str(e)}", "error")
             self.son_sure = 5
