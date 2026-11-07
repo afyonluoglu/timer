@@ -22,7 +22,13 @@ class MicrosecondFormatter(logging.Formatter):
             return super().formatTime(record, datefmt)
 
 # Log dosyası yolunu oluştur
-def setup_logging(log_file_path):
+# Veri ve log dosyası yollarını merkezi olarak tanımla
+VERI_KLASORU = os.path.join(os.path.dirname(os.path.abspath(__file__)), "timer-data")
+LOG_DOSYASI = os.path.join(VERI_KLASORU, "zamanlayici_log.txt")
+os.makedirs(VERI_KLASORU, exist_ok=True)
+
+
+def setup_logging(log_file_path=LOG_DOSYASI):
     """Initialize logging system with proper configuration"""
     # Create log directory if it doesn't exist
     log_dir = os.path.dirname(log_file_path)
@@ -217,6 +223,7 @@ class LogViewerDialog(QDialog):
     
     def load_logs(self):
         try:
+            print("Log File: ",self.log_file_path)
             with open(self.log_file_path, 'r', encoding='utf-8') as f:
                 self.all_logs = f.readlines()
             # print(f"  [DEBUG] Loaded {len(self.all_logs)} lines from log file.")
@@ -293,10 +300,12 @@ class LogViewerDialog(QDialog):
         self.setWindowTitle( f"Log İzleme ve Düzenleme - {len(filtered_logs)} kayıt görüntüleniyor")
 
 
-def view_filtered_logs(log_file_path):
+def view_filtered_logs(log_file_path=None):
     """Open a window to view and filter log files"""
+    if log_file_path is None:
+        log_file_path = LOG_DOSYASI
     dialog = LogViewerDialog(None, log_file_path)
-    dialog.exec_()
+    return dialog.exec_()
 
 if __name__ == "__main__":
     print("\n")

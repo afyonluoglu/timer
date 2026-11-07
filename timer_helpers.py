@@ -6,6 +6,7 @@ import tkinter as tk
 from PyQt5.QtWidgets import QMessageBox, QDialog, QListWidgetItem, QLabel, QWidget, QHBoxLayout, QApplication, QVBoxLayout, QPushButton
 from PyQt5.QtCore import Qt, QTime, QTimer
 from PyQt5.QtGui import QFont, QColor 
+from ti_models import format_alarm_bilgisi, VARSAYILAN_ALARM_DOSYASI
 
 class TimerHelpers:
     """Zamanlayıcı yardımcı metodları sınıfı"""
@@ -42,7 +43,7 @@ class TimerHelpers:
             for favori in self.app.favori_listesi:
                 if (favori['sure'] == target_kayit['sure'] and 
                     favori['aciklama'] == target_kayit['aciklama'] and
-                    favori.get('alarm', 'alarm-01.mp3') == target_kayit.get('alarm', 'alarm-01.mp3')):
+                    favori.get('alarm', VARSAYILAN_ALARM_DOSYASI) == target_kayit.get('alarm', VARSAYILAN_ALARM_DOSYASI)):
                     QMessageBox.information(self.app, "Bilgi", "Bu zamanlayıcı zaten favorilerde mevcut!")
                     return
             
@@ -50,7 +51,7 @@ class TimerHelpers:
             yeni_favori = {
                 'sure': target_kayit['sure'],
                 'aciklama': target_kayit['aciklama'],
-                'alarm': target_kayit.get('alarm', 'alarm-01.mp3'),
+                'alarm': target_kayit.get('alarm', VARSAYILAN_ALARM_DOSYASI),
                 'tekrar_toplam_sayi': target_kayit.get('tekrar_toplam_sayi', 1),
                 'tekrar_araligi_dakika': target_kayit.get('tekrar_araligi_dakika', 10),
                 'ozel_saat_aktif_ilk_calisma': target_kayit.get('ozel_saat_aktif_ilk_calisma', False),
@@ -85,9 +86,7 @@ class TimerHelpers:
         """Favori listesini güncelle"""
         self.app.favori_listesi_widget.clear()
         for favori in self.app.favori_listesi:
-            alarm_bilgisi = ""
-            if 'alarm' in favori and favori['alarm'] != "alarm-01.mp3":
-                alarm_bilgisi = f" - Alarm: {favori['alarm']}"
+            alarm_bilgisi = format_alarm_bilgisi(favori.get('alarm'))
             
             tekrar_bilgisi = ""
             if favori.get('tekrar_toplam_sayi', 1) > 1:
@@ -97,8 +96,16 @@ class TimerHelpers:
             if favori.get('ozel_saat_aktif_ilk_calisma') and favori.get('ozel_saat_str'):
                 ozel_saat_bilgisi = f" - İlk Alarm: {favori['ozel_saat_str']}"
 
+            sonra_baslat_bilgisi = ""
+            if favori.get('sonra_baslat_aktif'):
+                beklenen = favori.get('beklenen_favori')
+                if beklenen:
+                    sonra_baslat_bilgisi = f" [⏳ Sonra Başlat: {beklenen} bekleniyor]"
+                else:
+                    sonra_baslat_bilgisi = " [⏳ Sonra Başlat]"
+
             self.app.favori_listesi_widget.addItem(
-                f"⭐ {favori['sure']} dakika - {favori.get('aciklama', 'Açıklama yok')}{alarm_bilgisi}{tekrar_bilgisi}{ozel_saat_bilgisi}"
+                f"⭐ {favori['sure']} dakika - {favori.get('aciklama', 'Açıklama yok')}{alarm_bilgisi}{tekrar_bilgisi}{ozel_saat_bilgisi}{sonra_baslat_bilgisi}"
             )
 
     def favori_secimi_degisti(self):
@@ -157,31 +164,45 @@ class TimerHelpers:
     def favori_zamanlayici_baslat(self, item):
         """Favori zamanlayıcıyı başlat"""
         try:
-            # Zamanlayici sınıfını globals'tan al
-            import sys
-            current_module = sys.modules['__main__']
-            Zamanlayici = getattr(current_module, 'Zamanlayici')
+            # Zamanlayici sınıfını ti_models veya globals'tan al
+            try:
+                from ti_models import Zamanlayici
+            except ImportError:
+                import sys
+                current_module = sys.modules['__main__']
+                Zamanlayici = getattr(current_module, 'Zamanlayici')
             
-            indeks = self.app.favori_listesi_widget.row(item)
-            favori = self.app.favori_listesi[indeks]
+            if isinstance(item, dict):
+                favori = item
+            elif isinstance(item, int):
+                favori = self.app.favori_listesi[item]
+            else:
+                indeks = self.app.favori_listesi_widget.row(item)
+                favori = self.app.favori_listesi[indeks]
             
             self.app.zamanlayici_id_sayaci += 1
             yeni_zamanlayici = Zamanlayici(
                 id=self.app.zamanlayici_id_sayaci,
                 dakika_ayari=favori['sure'],
                 temel_aciklama=favori.get('aciklama', 'Zamanlayıcı'),
-                alarm=favori.get('alarm', 'alarm-01.mp3'),
+                alarm=favori.get('alarm', VARSAYILAN_ALARM_DOSYASI),
                 tekrar_toplam_sayi=favori.get('tekrar_toplam_sayi', 1),
                 tekrar_mevcut_calisma=1, 
                 tekrar_araligi_dakika=favori.get('tekrar_araligi_dakika', 10),
                 ozel_saat_aktif_ilk_calisma=favori.get('ozel_saat_aktif_ilk_calisma', False),
-                ozel_saat_str=favori.get('ozel_saat_str', None)
+                ozel_saat_str=favori.get('ozel_saat_str', None),
+                sonra_baslat_aktif=favori.get('sonra_baslat_aktif', False),
+                beklenen_favori_aciklama=favori.get('beklenen_favori')
             )
 
             yeni_zamanlayici.baslama_zamani_ilk_kurulum = datetime.datetime.now()
 
-            # Süre hesaplama mantığı (normal veya özel saat)
-            if yeni_zamanlayici.ozel_saat_aktif_ilk_calisma and yeni_zamanlayici.ozel_saat_str:
+            # Süre hesaplama mantığı (normal veya özel saat veya sonra başlat)
+            if yeni_zamanlayici.sonra_baslat_aktif:
+                yeni_zamanlayici.sure = yeni_zamanlayici.dakika_ayari * 60
+                yeni_zamanlayici.toplam_sure = yeni_zamanlayici.dakika_ayari * 60
+                yeni_zamanlayici.ozel_saat_aktif_ilk_calisma = False
+            elif yeni_zamanlayici.ozel_saat_aktif_ilk_calisma and yeni_zamanlayici.ozel_saat_str:
                 # Özel saat mantığı (geçmiş zamanlayıcı başlatma ile aynı)
                 try:
                     alarm_saati_qtime = QTime.fromString(yeni_zamanlayici.ozel_saat_str, "HH:mm")
@@ -210,6 +231,7 @@ class TimerHelpers:
             self.app.zamanlayici_widget_olustur(yeni_zamanlayici)
             self.app.son_sure = favori['sure']
             self.ayarlari_kaydet()
+            return yeni_zamanlayici
             
             # Favori listesini gizle ve ana arayüze odaklan
             # if self.app.favori_listesi_widget.isVisible():
@@ -238,12 +260,14 @@ class TimerHelpers:
                 id=999999,  # Geçici ID
                 dakika_ayari=favori['sure'],
                 temel_aciklama=favori.get('aciklama', 'Favori'),
-                alarm=favori.get('alarm', 'alarm-01.mp3'),
+                alarm=favori.get('alarm', VARSAYILAN_ALARM_DOSYASI),
                 tekrar_toplam_sayi=favori.get('tekrar_toplam_sayi', 1),
                 tekrar_mevcut_calisma=1,
                 tekrar_araligi_dakika=favori.get('tekrar_araligi_dakika', 10),
                 ozel_saat_aktif_ilk_calisma=favori.get('ozel_saat_aktif_ilk_calisma', False),
-                ozel_saat_str=favori.get('ozel_saat_str', None)
+                ozel_saat_str=favori.get('ozel_saat_str', None),
+                sonra_baslat_aktif=favori.get('sonra_baslat_aktif', False),
+                beklenen_favori_aciklama=favori.get('beklenen_favori')
             )
             
             # Düzenleme dialogunu aç
@@ -267,7 +291,9 @@ class TimerHelpers:
                     'tekrar_toplam_sayi': values['tekrar_sayisi'],
                     'tekrar_araligi_dakika': values['tekrar_araligi_dakika'],
                     'ozel_saat_aktif_ilk_calisma': values['alarm_zamani_aktif'],
-                    'ozel_saat_str': values['alarm_zamani'] if values['alarm_zamani_aktif'] else None
+                    'ozel_saat_str': values['alarm_zamani'] if values['alarm_zamani_aktif'] else None,
+                    'sonra_baslat_aktif': values.get('sonra_baslat_aktif', False),
+                    'beklenen_favori': values.get('beklenen_favori')
                 }
                 
                 # Favoriyi güncelle
@@ -387,9 +413,7 @@ class TimerHelpers:
                 sorted_gecmis = self.app.gecmis_listesi
 
             for kayit in sorted_gecmis:
-                alarm_bilgisi = ""
-                if 'alarm' in kayit and kayit['alarm'] != "alarm-01.mp3":
-                    alarm_bilgisi = f" - Alarm: {kayit['alarm']}"
+                alarm_bilgisi = format_alarm_bilgisi(kayit.get('alarm'))
                 
                 tekrar_bilgisi = ""
                 if kayit.get('tekrar_toplam_sayi', 1) > 1:
@@ -456,7 +480,7 @@ class TimerHelpers:
                 id=self.app.zamanlayici_id_sayaci, 
                 dakika_ayari=target_kayit['sure'], 
                 temel_aciklama=target_kayit.get('aciklama', 'Geçmişten'),
-                alarm=target_kayit.get('alarm', 'alarm-01.mp3'),
+                alarm=target_kayit.get('alarm', VARSAYILAN_ALARM_DOSYASI),
                 tekrar_toplam_sayi=target_kayit.get('tekrar_toplam_sayi', 1),
                 tekrar_mevcut_calisma=1, 
                 tekrar_araligi_dakika=target_kayit.get('tekrar_araligi_dakika', 10),

@@ -2,15 +2,130 @@
 import sys
 import os
 import json
+import random
 from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, 
                            QSpinBox, QLineEdit, QCheckBox, QTimeEdit, QComboBox, 
                            QPushButton, QLabel, QMessageBox, QProgressBar, QFrame,
                            QScrollArea, QApplication, QTextEdit)  
-from PyQt5.QtCore import Qt, QTime, QUrl, QTimer
+from PyQt5.QtCore import Qt, QTime, QUrl, QTimer, QEvent
 from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QStandardItemModel, QStandardItem
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 import re
+
+# Modül ayrımı: Taşınan diyalog sınıfları ti_dialogs modülünden içe aktarılır
+from ti_dialogs import IlerlemeDialog, YardimPenceresi, AlarmDialog
+from ti_models import VARSAYILAN_ALARM_DOSYASI
+
+
+class CheckableComboBox(QComboBox):
+    """Birden fazla öğenin checkbox ile işaretlenebildiği özel ComboBox sınıfı"""
+    secimDegisti = pyqtSignal()
+
+    def __init__(self, parent=None):
+        """Çoklu seçimli ComboBox bileşenini başlatır"""
+        super().__init__(parent)
+        self.setModel(QStandardItemModel(self))
+        self.setEditable(True)
+        self.lineEdit().setReadOnly(True)
+        self.lineEdit().installEventFilter(self)
+        self.view().viewport().installEventFilter(self)
+        self._son_tiklanan_veri = None
+        self.model().dataChanged.connect(self._veri_degisti)
+
+    def eventFilter(self, obj, event):
+        """Fare tıklamalarını yakalayarak öğelerin işaretlenmesini ve menünün açık kalmasını sağlar"""
+        if obj == self.lineEdit() and event.type() == QEvent.MouseButtonRelease:
+            if self.view().isVisible():
+                self.hidePopup()
+            else:
+                self.showPopup()
+            return True
+
+        if obj == self.view().viewport() and event.type() == QEvent.MouseButtonRelease:
+            index = self.view().indexAt(event.pos())
+            if index.isValid():
+                item = self.model().itemFromIndex(index)
+                yeni_durum = Qt.Unchecked if item.checkState() == Qt.Checked else Qt.Checked
+                item.setCheckState(yeni_durum)
+                self._son_tiklanan_veri = item.data(Qt.UserRole)
+                self.metni_guncelle()
+                self.secimDegisti.emit()
+                return True
+        return super().eventFilter(obj, event)
+
+    def _veri_degisti(self, top_left, bottom_right, roles=None):
+        """Model verisi değiştiğinde görünen metni günceller"""
+        self.metni_guncelle()
+        self.secimDegisti.emit()
+
+    def addCheckableItem(self, text, data=None, checked=False):
+        """ComboBox içerisine işaretlenebilir yeni bir öğe ekler"""
+        item = QStandardItem(text)
+        item.setData(data if data is not None else text, Qt.UserRole)
+        item.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled | Qt.ItemIsSelectable)
+        item.setData(Qt.Checked if checked else Qt.Unchecked, Qt.CheckStateRole)
+        self.model().appendRow(item)
+        self.metni_guncelle()
+
+    def checkedDataList(self):
+        """İşaretlenmiş olan tüm öğelerin veri (dosya adı) listesini döndürür"""
+        secililer = []
+        for i in range(self.model().rowCount()):
+            item = self.model().item(i)
+            if item.checkState() == Qt.Checked:
+                secililer.append(item.data(Qt.UserRole))
+        return secililer
+
+    def setCheckedDataList(self, alarm_verisi):
+        """Verilen tekil alarm adını veya alarm listesini ComboBox içinde işaretler"""
+        if isinstance(alarm_verisi, list):
+            hedef_kume = set(alarm_verisi)
+        elif isinstance(alarm_verisi, str) and alarm_verisi:
+            hedef_kume = {alarm_verisi}
+        else:
+            hedef_kume = {VARSAYILAN_ALARM_DOSYASI}
+
+        self.model().blockSignals(True)
+        herhangi_biri_secildi = False
+        for i in range(self.model().rowCount()):
+            item = self.model().item(i)
+            veri = item.data(Qt.UserRole)
+            if veri in hedef_kume:
+                item.setCheckState(Qt.Checked)
+                herhangi_biri_secildi = True
+            else:
+                item.setCheckState(Qt.Unchecked)
+
+        if not herhangi_biri_secildi and self.model().rowCount() > 0:
+            self.model().item(0).setCheckState(Qt.Checked)
+        self.model().blockSignals(False)
+        self.metni_guncelle()
+
+    def metni_guncelle(self):
+        """İşaretli öğelere göre ComboBox üzerindeki özet metni ve ipucunu günceller"""
+        secili_metinler = []
+        secili_veriler = []
+        for i in range(self.model().rowCount()):
+            item = self.model().item(i)
+            if item.checkState() == Qt.Checked:
+                secili_metinler.append(item.text())
+                secili_veriler.append(str(item.data(Qt.UserRole)))
+
+        if not secili_veriler:
+            ozet = f"Varsayılan ({VARSAYILAN_ALARM_DOSYASI})"
+            ipucu = f"Hiçbir ses işaretlenmediği için varsayılan ({VARSAYILAN_ALARM_DOSYASI}) çalınır"
+        elif len(secili_veriler) == 1:
+            ozet = secili_metinler[0]
+            ipucu = f"Seçili ses: {secili_veriler[0]}"
+        else:
+            ozet = f"🎲 {len(secili_veriler)} ses seçili ({', '.join(secili_veriler)})"
+            ipucu = "Rastgele çalınacak sesler:\n• " + "\n• ".join(secili_veriler)
+
+        if self.lineEdit():
+            self.lineEdit().setText(ozet)
+        self.setToolTip(ipucu)
+
 
 class ClickableFrame(QFrame):
     """Çift tıklanabilir frame sınıfı"""
@@ -25,6 +140,7 @@ class ClickableFrame(QFrame):
             self.doubleClicked.emit(self.timer_id_str)
         super().mouseDoubleClickEvent(event)
 
+
 class YeniZamanlayiciDialog(QDialog):
     """Yeni zamanlayıcı oluşturma ve düzenleme dialogu"""
     
@@ -32,8 +148,12 @@ class YeniZamanlayiciDialog(QDialog):
         super().__init__(parent)
         
         self.is_editing_favorite = is_editing_favorite
-        self.alarm_dosyalari = alarm_dosyalari or []
         self.parent_app = parent
+        if self.parent_app and hasattr(self.parent_app, 'alarm_dosyalarini_bul'):
+            self.parent_app.alarm_dosyalarini_bul()
+            self.alarm_dosyalari = self.parent_app.alarm_dosyalari
+        else:
+            self.alarm_dosyalari = alarm_dosyalari or []
         self.veri_klasoru = veri_klasoru
         self.editing_timer = zamanlayici_to_edit
 
@@ -45,7 +165,7 @@ class YeniZamanlayiciDialog(QDialog):
         else:
             self.setWindowTitle("Yeni Zamanlayıcı")
 
-        self.resize(400, 320)
+        self.resize(420, 370)
         
         self.medya_oynatici = QMediaPlayer()
         self.medya_oynatici.stateChanged.connect(self.oynatici_durum_degisti)
@@ -75,13 +195,23 @@ class YeniZamanlayiciDialog(QDialog):
         self.alarm_zamani_edit.setEnabled(False)
         form_duzen.addRow("Alarm Saati:", self.alarm_zamani_edit)
 
+        # Sonra Başlat bileşenleri
+        self.sonra_baslat_checkbox = QCheckBox("Sonra Başlat")
+        self.sonra_baslat_checkbox.stateChanged.connect(self.sonra_baslat_durumu_degisti)
+        form_duzen.addRow(self.sonra_baslat_checkbox)
+
+        self.sonra_baslat_combobox = QComboBox()
+        self.sonra_baslat_combobox.setEnabled(False)
+        self.favorileri_comboboxa_yukle()
+        form_duzen.addRow("Beklenecek Zamanlayıcı:", self.sonra_baslat_combobox)
+
         alarm_duzen = QHBoxLayout()
-        self.alarm_secici = QComboBox()
-        self.alarm_secici.addItem("Varsayılan (alarm-01.mp3)", "alarm-01.mp3")
+        self.alarm_secici = CheckableComboBox()
+        self.alarm_secici.addCheckableItem(f"Varsayılan ({VARSAYILAN_ALARM_DOSYASI})", VARSAYILAN_ALARM_DOSYASI, checked=True)
         for dosya in self.alarm_dosyalari:
-            if dosya != "alarm-01.mp3":
-                self.alarm_secici.addItem(dosya, dosya)
-        self.alarm_secici.currentIndexChanged.connect(self.alarm_secimi_degisti)
+            if dosya != VARSAYILAN_ALARM_DOSYASI:
+                self.alarm_secici.addCheckableItem(dosya, dosya, checked=False)
+        self.alarm_secici.secimDegisti.connect(self.alarm_secimi_degisti)
         alarm_duzen.addWidget(self.alarm_secici)
         
         self.cal_durdur_dugme = QPushButton("Çal")
@@ -104,7 +234,7 @@ class YeniZamanlayiciDialog(QDialog):
         
         buton_duzen = QHBoxLayout()
 
-            # Favorilere Ekle düğmesi (sadece yeni zamanlayıcı modunda)
+        # Favorilere Ekle düğmesi (sadece yeni zamanlayıcı modunda)
         if not self.editing_timer:
             self.favorilere_ekle_butonu = QPushButton("Favorilere Ekle")
             self.favorilere_ekle_butonu.clicked.connect(self.favorilere_ekle)
@@ -120,6 +250,34 @@ class YeniZamanlayiciDialog(QDialog):
         form_duzen.addRow("", buton_duzen)
         
         self.setLayout(form_duzen)
+
+    def favorileri_comboboxa_yukle(self):
+        """Favori zamanlayıcıları combobox'a yükle"""
+        self.sonra_baslat_combobox.clear()
+        if self.parent_app and hasattr(self.parent_app, 'favori_listesi') and self.parent_app.favori_listesi:
+            for favori in self.parent_app.favori_listesi:
+                aciklama = favori.get('aciklama', 'Zamanlayıcı')
+                sure = favori.get('sure', 0)
+                gorunen_ad = f"⭐ {sure} dk - {aciklama}"
+                self.sonra_baslat_combobox.addItem(gorunen_ad, aciklama)
+        else:
+            self.sonra_baslat_combobox.addItem("Favori bulunamadı", None)
+
+    def sonra_baslat_durumu_degisti(self, state):
+        """Sonra Başlat seçeneği değiştiğinde alarm saati ve combobox durumunu ayarla"""
+        is_checked = (state == Qt.Checked)
+        self.sonra_baslat_combobox.setEnabled(is_checked)
+        if is_checked:
+            # Alarm zamanı ve saati pasif hale getirilir
+            self.alarm_zamani_checkbox.setChecked(False)
+            self.alarm_zamani_checkbox.setEnabled(False)
+            self.alarm_zamani_edit.setEnabled(False)
+        else:
+            allow_specific_time = True
+            if self.editing_timer and not self.is_editing_favorite:
+                allow_specific_time = (self.editing_timer.tekrar_mevcut_calisma == 1)
+            self.alarm_zamani_checkbox.setEnabled(allow_specific_time)
+            self.alarm_zamani_edit.setEnabled(self.alarm_zamani_checkbox.isChecked())
 
     def favorilere_ekle(self):
         """Mevcut ayarları favorilere ekle"""
@@ -143,7 +301,9 @@ class YeniZamanlayiciDialog(QDialog):
             'tekrar_toplam_sayi': values['tekrar_sayisi'],
             'tekrar_araligi_dakika': values['tekrar_araligi_dakika'],
             'ozel_saat_aktif_ilk_calisma': values['alarm_zamani_aktif'],
-            'ozel_saat_str': values['alarm_zamani'] if values['alarm_zamani_aktif'] else None
+            'ozel_saat_str': values['alarm_zamani'] if values['alarm_zamani_aktif'] else None,
+            'sonra_baslat_aktif': values.get('sonra_baslat_aktif', False),
+            'beklenen_favori': values.get('beklenen_favori')
         }
         
         # Aynı favori var mı kontrol et
@@ -176,9 +336,7 @@ class YeniZamanlayiciDialog(QDialog):
             self.dakika_spinner.setValue(self.editing_timer.dakika_ayari)
             self.aciklama_girisi.setText(self.editing_timer.temel_aciklama)
             
-            index = self.alarm_secici.findData(self.editing_timer.alarm_dosyasi)
-            if index >= 0:
-                self.alarm_secici.setCurrentIndex(index)
+            self.alarm_secici.setCheckedDataList(self.editing_timer.alarm_dosyasi)
             
             self.tekrar_sayisi_spinner.setValue(self.editing_timer.tekrar_toplam_sayi)
             self.tekrar_araligi_spinner.setValue(self.editing_timer.tekrar_araligi_dakika)
@@ -200,11 +358,26 @@ class YeniZamanlayiciDialog(QDialog):
             else:
                 self.alarm_zamani_checkbox.setChecked(False)
                 self.alarm_zamani_edit.setTime(QTime.currentTime().addSecs(self.editing_timer.dakika_ayari * 60))
+
+            # Sonra Başlat ayarları
+            if getattr(self.editing_timer, 'sonra_baslat_aktif', False):
+                self.sonra_baslat_checkbox.setChecked(True)
+                beklenen = getattr(self.editing_timer, 'beklenen_favori_aciklama', None)
+                if beklenen:
+                    idx = self.sonra_baslat_combobox.findData(beklenen)
+                    if idx >= 0:
+                        self.sonra_baslat_combobox.setCurrentIndex(idx)
+                    else:
+                        idx = self.sonra_baslat_combobox.findText(beklenen)
+                        if idx >= 0:
+                            self.sonra_baslat_combobox.setCurrentIndex(idx)
         else:
             self.dakika_spinner.setValue(varsayilan_sure)
             self.alarm_zamani_edit.setTime(QTime.currentTime().addSecs(varsayilan_sure * 60))
             self.alarm_zamani_checkbox.setChecked(False)
             self.alarm_zamani_edit.setEnabled(False)
+            self.sonra_baslat_checkbox.setChecked(False)
+            self.sonra_baslat_combobox.setEnabled(False)
 
     def tekrar_ayarlarini_guncelle(self, deger):
         """Tekrar sayısı değiştiğinde tekrar aralığı spinner'ını etkinleştir/devre dışı bırak"""
@@ -215,6 +388,8 @@ class YeniZamanlayiciDialog(QDialog):
         self.alarm_zamani_edit.setEnabled(state == Qt.Checked)
         if state == Qt.Checked:
             self.dakika_spinner.setToolTip("Belirli bir alarm saati ayarlandığında, bu 'Dakika' değeri sonraki tekrarlar için kullanılır.")
+            if self.sonra_baslat_checkbox.isChecked():
+                self.sonra_baslat_checkbox.setChecked(False)
         else:
             self.dakika_spinner.setToolTip("")
 
@@ -225,12 +400,13 @@ class YeniZamanlayiciDialog(QDialog):
             self.cal_durdur_dugme.setText("Çal")
     
     def alarm_cal_durdur(self):
-        """Seçili alarmı çal veya durdur"""
+        """Seçili alarmı (veya çoklu seçimde rastgele birini) çal veya durdur"""
         if self.medya_oynatici.state() == QMediaPlayer.PlayingState:
             self.medya_oynatici.stop()
             self.cal_durdur_dugme.setText("Çal")
         else:
-            alarm_dosyasi = self.alarm_secici.currentData()
+            secili_alarmlar = self.alarm_secici.checkedDataList()
+            alarm_dosyasi = random.choice(secili_alarmlar) if secili_alarmlar else VARSAYILAN_ALARM_DOSYASI
             
             try:
                 dosya_yolu = os.path.join(self.veri_klasoru, alarm_dosyasi)
@@ -254,447 +430,33 @@ class YeniZamanlayiciDialog(QDialog):
     
     def getValues(self):
         """Form değerlerini döndür"""
+        beklenen_favori = None
+        if self.sonra_baslat_checkbox.isChecked():
+            beklenen_favori = self.sonra_baslat_combobox.currentData()
+            if not beklenen_favori and self.sonra_baslat_combobox.count() > 0:
+                beklenen_favori = self.sonra_baslat_combobox.currentText()
+
+        secili_alarmlar = self.alarm_secici.checkedDataList()
+        if not secili_alarmlar:
+            alarm_degeri = VARSAYILAN_ALARM_DOSYASI
+        elif len(secili_alarmlar) == 1:
+            alarm_degeri = secili_alarmlar[0]
+        else:
+            alarm_degeri = secili_alarmlar
+        
         return {
             'dakika': self.dakika_spinner.value(),
             'aciklama': self.aciklama_girisi.text() or f"Zamanlayıcı",
-            'alarm': self.alarm_secici.currentData(),
+            'alarm': alarm_degeri,
             'tekrar_sayisi': self.tekrar_sayisi_spinner.value(),
             'tekrar_araligi_dakika': self.tekrar_araligi_spinner.value(),
             'alarm_zamani_aktif': self.alarm_zamani_checkbox.isChecked(),
-            'alarm_zamani': self.alarm_zamani_edit.time().toString("HH:mm") if self.alarm_zamani_checkbox.isChecked() else None
+            'alarm_zamani': self.alarm_zamani_edit.time().toString("HH:mm") if self.alarm_zamani_checkbox.isChecked() else None,
+            'sonra_baslat_aktif': self.sonra_baslat_checkbox.isChecked(),
+            'beklenen_favori': beklenen_favori
         }
     
     def closeEvent(self, event):
         """Dialog kapatıldığında çalmayı durdur"""
         self.medya_oynatici.stop()
         event.accept()
-
-class IlerlemeDialog(QDialog):
-    """İlerleme gösterge dialogu"""
-    
-    def __init__(self, parent=None, baslik="İşlem Yapılıyor..."):
-        super().__init__(parent)
-        self.setWindowTitle(baslik)
-        self.setModal(True)
-        self.resize(300, 150)
-        
-        # İptal bayrağı
-        self.iptal_edildi = False
-        
-        duzen = QVBoxLayout()
-        
-        self.mesaj_etiketi = QLabel("İşlem başlatılıyor...")
-        duzen.addWidget(self.mesaj_etiketi)
-        
-        self.ilerleme_cubugu = QProgressBar()
-        self.ilerleme_cubugu.setRange(0, 100)  # 0-100 arası yüzde
-        self.ilerleme_cubugu.setValue(0)
-        duzen.addWidget(self.ilerleme_cubugu)
-        
-        # İptal düğmesi
-        self.iptal_dugme = QPushButton("İptal")
-        self.iptal_dugme.clicked.connect(self.iptal_et)
-        duzen.addWidget(self.iptal_dugme)
-        
-        self.setLayout(duzen)
-    
-    def mesaj_guncelle(self, mesaj):
-        """İlerleme mesajını güncelle"""
-        self.mesaj_etiketi.setText(mesaj)
-        QApplication.processEvents()  # UI'yi güncelle
-    
-    def ilerleme_guncelle(self, yuzde, mesaj=None):
-        """İlerleme çubuğunu ve mesajı güncelle"""
-        self.ilerleme_cubugu.setValue(max(0, min(100, yuzde)))
-        if mesaj:
-            self.mesaj_guncelle(mesaj)
-        QApplication.processEvents()  # UI'yi güncelle
-    
-    def islem_sayaci_guncelle(self, mevcut, toplam):
-        """İşlem sayacını güncelle ve yüzde hesapla"""
-        if toplam > 0:
-            yuzde = int((mevcut / toplam) * 100)
-            self.ilerleme_guncelle(yuzde, f"İşlem {mevcut}/{toplam}")
-        else:
-            self.ilerleme_guncelle(0, "İşlem başlatılıyor...")
-    
-    def iptal_et(self):
-        """İptal işlemini başlat"""
-        self.iptal_edildi = True
-        self.mesaj_guncelle("İptal ediliyor...")
-        self.iptal_dugme.setEnabled(False)
-        self.accept() 
-    
-    def closeEvent(self, event):
-        """Dialog kapatıldığında iptal bayrağını ayarla"""
-        # self.iptal_edildi = True
-        event.accept()
-
-class YardimPenceresi(QDialog):
-    """Yardım penceresi"""
-    
-    def __init__(self, parent=None, baslik="Yardım", icerik="", html_dosya_yolu=None):
-        super().__init__(parent)
-        self.setWindowTitle(baslik)
-        self.resize(1200, 1000)
-        
-        duzen = QVBoxLayout()
-        # QLabel yerine QTextEdit kullanın
-        self.metin_alani = QTextEdit()
-        self.metin_alani.setReadOnly(True) # Sadece okunabilir yap
-        
-        # Eğer içerik varsa HTML olarak ayarla
-        if icerik and html_dosya_yolu:
-            icerik = self._fix_image_paths(icerik, html_dosya_yolu)
-            self.metin_alani.setHtml(icerik)
-        else:
-            # Varsayılan bir içerik (opsiyonel, normalde timer-help.html'den gelecek)
-            self.metin_alani.setHtml("""
-                <h2>Zamanlayıcı Uygulaması Yardımı</h2>
-                <p>Yardım içeriği yüklenemedi.</p>
-            """)
-        
-        duzen.addWidget(self.metin_alani) # QScrollArea'ya gerek kalmaz, QTextEdit kendi kaydırmasına sahip
-        
-        kapat_dugme = QPushButton("Kapat")
-        kapat_dugme.clicked.connect(self.close)
-        duzen.addWidget(kapat_dugme)
-        
-        self.setLayout(duzen)
-
-    def _fix_image_paths(self, html, html_path):
-        """HTML içindeki <img src="..."> yollarını mutlak dosya yoluna çevirir"""
-        base_dir = os.path.dirname(os.path.abspath(html_path))
-        def repl(match):
-            src = match.group(1)
-            # Eğer zaten mutlak yol ise dokunma
-            if os.path.isabs(src):
-                return f'src="{src}"'
-            abs_path = os.path.join(base_dir, src)
-            abs_path = abs_path.replace("\\", "/")  # PyQt için
-            return f'src="file:///{abs_path}"'
-        return re.sub(r'src="([^"]+)"', repl, html)
-        
-class AlarmDialog(QDialog):
-    """Alarm dialogu - QDialog'dan türetilmiş özel dialog"""
-    def __init__(self, parent=None, title="Alarm", message="", ses_dosyasi=""):
-        super().__init__(parent)
-        
-        # Temel pencere ayarları
-        self.setWindowTitle(title)
-        self.setModal(True)
-        self.setMinimumSize(450, 280)  # Biraz daha büyük minimum
-        self.resize(550, 320)  # Başlangıç boyutu daha büyük
-        
-        # Pencereyi her zaman en üstte tut
-        self.setWindowFlags(Qt.Dialog | Qt.WindowStaysOnTopHint | Qt.WindowTitleHint | Qt.WindowSystemMenuHint)
-                
-        # Ses dosyasını sakla
-        self.ses_dosyasi = ses_dosyasi
-        self.medya_oynatici = None
-        self.ses_caliniyor = False
-        
-        self.sure_baslangic = None
-        self.sure_timer = None
-        self.sure_label = None
-
-        self.arayuz_olustur(message)
-        
-        self.sure_baslangic = QTime.currentTime()
-        self.sure_timer = QTimer(self)
-        self.sure_timer.timeout.connect(self.sure_guncelle)
-        self.sure_timer.start(1000)  # Her saniye güncelle
-                
-        # Dialog'u ortalama işlemini geciktir
-        QTimer.singleShot(200, self.center_dialog)
-        
-        # Sesi başlat (dialog tamamen yüklendikten sonra)
-        QTimer.singleShot(300, self.sesi_baslat)
-
-    def arayuz_olustur(self, message):
-        """Dialog arayüzünü oluştur"""
-        ana_layout = QVBoxLayout()
-        ana_layout.setSpacing(20)
-        ana_layout.setContentsMargins(25, 25, 25, 25)
-        
-        # Üst kısım - Başlık ve ikon
-        ust_layout = QHBoxLayout()
-        
-        # Alarm ikonu (Unicode karakteri)
-        ikon_label = QLabel("⏰")
-        ikon_label.setStyleSheet("""
-            QLabel {
-                font-size: 32px;
-                color: #ff6b6b;
-                margin-right: 10px;
-            }
-        """)
-        ikon_label.setFixedSize(50, 40)  # Sabit boyut
-        ust_layout.addWidget(ikon_label)
-        
-        # Başlık
-        baslik_label = QLabel("SÜRE DOLDU!")
-        baslik_label.setStyleSheet("""
-            QLabel {
-                font-size: 22px;
-                font-weight: bold;
-                color: #ff6b6b;
-            }
-        """)
-        ust_layout.addWidget(baslik_label)
-        ust_layout.addStretch()
-        
-        ana_layout.addLayout(ust_layout)
-        
-        # Mesaj alanı - Font boyutu düzeltildi
-        mesaj_frame = QFrame()
-        mesaj_frame.setFrameStyle(QFrame.Box | QFrame.Raised)
-        mesaj_frame.setMinimumHeight(100)  # Daha yüksek minimum
-        mesaj_frame.setStyleSheet("""
-            QFrame {
-                background-color: #f8f9fa;
-                border: 2px solid #e9ecef;
-                border-radius: 8px;
-                padding: 20px;
-            }
-        """)
-        
-        mesaj_layout = QVBoxLayout()
-        mesaj_layout.setContentsMargins(15, 15, 15, 15)  # Daha fazla padding
-        mesaj_label = QLabel(message)
-        mesaj_label.setWordWrap(True)
-        mesaj_label.setAlignment(Qt.AlignCenter)
-        mesaj_label.setMinimumHeight(60)  # Daha yüksek minimum
-        
-        # Font boyutunu direkt QFont ile ayarla
-        font = QFont("Arial", 12)  # 12 punto font
-        font.setWeight(QFont.Normal)
-        mesaj_label.setFont(font)
-        
-        mesaj_label.setStyleSheet("""
-            QLabel {
-                color: #333333;
-                background: transparent;
-                border: none;
-                padding: 10px;
-            }
-        """)
-        mesaj_layout.addWidget(mesaj_label)
-        mesaj_frame.setLayout(mesaj_layout)
-        
-        ana_layout.addWidget(mesaj_frame)
-        
-        # Sayaç etiketi ekle (ekranın üst kısmına)
-        self.sure_label = QLabel("Geçen Süre: 00:00")
-        self.sure_label.setAlignment(Qt.AlignCenter)
-        self.sure_label.setStyleSheet("""
-            QLabel {
-                font-size: 18px;
-                color: #007bff;
-                font-weight: bold;
-                margin-bottom: 10px;
-            }
-        """)
-        ana_layout.addWidget(self.sure_label)
-
-        # Esnek boşluk
-        ana_layout.addStretch()
-        
-        # Düğme alanı
-        dugme_frame = QFrame()
-        dugme_layout = QHBoxLayout()
-        dugme_layout.setSpacing(15)
-        
-        # Sessiz düğmesi  
-        self.sessiz_dugme = QPushButton("🔇 Sessiz")
-        self.sessiz_dugme.setMinimumHeight(45)
-        self.sessiz_dugme.setMinimumWidth(130)
-        # Düğme fontunu da ayarla
-        dugme_font = QFont("Arial", 12)
-        dugme_font.setWeight(QFont.Bold)
-        self.sessiz_dugme.setFont(dugme_font)
-        self.sessiz_dugme.setStyleSheet("""
-            QPushButton {
-                background-color: #ff6b6b;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 10px;
-            }
-            QPushButton:hover {
-                background-color: #e55353;
-            }
-            QPushButton:pressed {
-                background-color: #d93939;
-            }
-            QPushButton:disabled {
-                background-color: #cccccc;
-                color: #666666;
-            }
-        """)
-        self.sessiz_dugme.clicked.connect(self.sesi_durdur)
-        dugme_layout.addWidget(self.sessiz_dugme)
-        
-        # Tamam düğmesi
-        tamam_dugme = QPushButton("✓ Tamam")
-        tamam_dugme.setMinimumHeight(45)
-        tamam_dugme.setMinimumWidth(130)
-        tamam_dugme.setFont(dugme_font)  # Aynı font
-        tamam_dugme.setStyleSheet("""
-            QPushButton {
-                background-color: #28a745;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 10px;
-            }
-            QPushButton:hover {
-                background-color: #218838;
-            }
-            QPushButton:pressed {
-                background-color: #1e7e34;
-            }
-        """)
-        tamam_dugme.clicked.connect(self.accept)
-        tamam_dugme.setDefault(True)  # Enter tuşu ile tetiklenebilir
-        tamam_dugme.setFocus()  # İlk odak bu düğmede
-        dugme_layout.addWidget(tamam_dugme)
-        
-        dugme_frame.setLayout(dugme_layout)
-        ana_layout.addWidget(dugme_frame)
-        
-        self.setLayout(ana_layout)
-
-    def sure_guncelle(self):
-        """Geçen süreyi güncelle"""
-        if self.sure_baslangic:
-            elapsed = self.sure_baslangic.secsTo(QTime.currentTime())
-            dakika = elapsed // 60
-            saniye = elapsed % 60
-            self.sure_label.setText(f"Geçen Süre: {dakika:02d}:{saniye:02d}")
-
-    def center_dialog(self):
-        """ Dialog'u ekranın ortasına yerleştir """
-        # Önce pencereyi göster ki gerçek boyutları alabilelim
-        self.show()
-        
-        # QDesktopWidget kullanarak ekran boyutunu al
-        from PyQt5.QtWidgets import QDesktopWidget, QApplication
-        
-        # Ana ekranı al
-        desktop = QDesktopWidget()
-        screen_rect = desktop.availableGeometry()  # Görev çubuğu hariç alan
-        
-        # Dialog boyutunu al
-        dialog_rect = self.geometry()
-        
-        # Orta noktayı hesapla
-        x = (screen_rect.width() - dialog_rect.width()) // 2
-        y = (screen_rect.height() - dialog_rect.height()) // 2
-        
-        # Pozisyonu ayarla
-        self.move(x, y)
-        
-        # Pencereyi en öne getir
-        self.raise_()
-        self.activateWindow()
-
-    def force_update(self):
-            """Pencereyi zorla güncelle"""
-            self.update()
-            self.repaint()
-
-    def sesi_baslat(self):
-        """Alarm sesini çalmaya başlar"""
-        if self.ses_dosyasi and os.path.exists(self.ses_dosyasi):
-            try:
-                self.medya_oynatici = QMediaPlayer()
-                url = QUrl.fromLocalFile(os.path.abspath(self.ses_dosyasi))
-                content = QMediaContent(url)
-                self.medya_oynatici.setMedia(content)
-                
-                # Ses seviyesini ayarla
-                self.medya_oynatici.setVolume(85)
-                
-                # Döngüde çalsın
-                self.medya_oynatici.mediaStatusChanged.connect(self.medya_durumu_degisti)
-                
-                self.medya_oynatici.play()
-                self.ses_caliniyor = True
-                
-                # Ses durumunu güncelle
-                self.sessiz_dugme.setText("🔇 Sessiz (Çalıyor)")
-                
-            except Exception as e:
-                print(f"Alarm sesi çalınırken hata: {e}")
-                self.sessiz_dugme.setText("🔇 Ses Hatası")
-                self.sessiz_dugme.setEnabled(False)
-    
-    def medya_durumu_degisti(self, durum):
-        """Medya durumu değiştiğinde döngü için kontrol"""
-        if (durum == QMediaPlayer.EndOfMedia and 
-            self.ses_caliniyor and 
-            self.medya_oynatici):
-            # Ses bitti, 5 dakika sonra tekrar başlat (döngü)
-            QTimer.singleShot(5 * 60 * 1000, lambda: (
-                        self.medya_oynatici.setPosition(0),
-                        self.medya_oynatici.play()
-                    ))            
-            # self.medya_oynatici.setPosition(0)
-            # self.medya_oynatici.play()
-    
-    def sesi_durdur(self):
-        """Alarm sesini durdur"""
-        if self.medya_oynatici and self.ses_caliniyor:
-            self.medya_oynatici.stop()
-            self.ses_caliniyor = False
-            self.sessiz_dugme.setText("🔇 Ses Durduruldu")
-            self.sessiz_dugme.setEnabled(False)
-    
-    def keyPressEvent(self, event):
-        """Klavye olaylarını yakala"""
-        if event.key() == Qt.Key_Escape:
-            # ESC tuşu ile sadece sesi durdur, pencereyi kapatma
-            if self.ses_caliniyor:
-                self.sesi_durdur()
-            return
-        elif event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
-            # Enter ile tamam
-            self.accept()
-            return
-        elif event.key() == Qt.Key_Space:
-            # Space ile sessiz
-            if self.ses_caliniyor:
-                self.sesi_durdur()
-            return
-        
-        super().keyPressEvent(event)
-    
-    def closeEvent(self, event):
-        """Dialog kapatılırken sesi durdur"""
-        if self.medya_oynatici and self.ses_caliniyor:
-            self.medya_oynatici.stop()
-            self.ses_caliniyor = False
-
-        if self.sure_timer:
-            self.sure_timer.stop()
-        super().closeEvent(event)
-    
-    def accept(self):
-        """Tamam düğmesine basıldığında"""
-        if self.medya_oynatici and self.ses_caliniyor:
-            self.medya_oynatici.stop()
-            self.ses_caliniyor = False
-        if self.sure_timer:
-            self.sure_timer.stop()
-        super().accept()
-    
-    def reject(self):
-        """İptal veya X düğmesine basıldığında"""
-        if self.sure_timer:
-            self.sure_timer.stop()        
-        if self.medya_oynatici and self.ses_caliniyor:
-            self.medya_oynatici.stop()
-            self.ses_caliniyor = False
-        super().reject()
-

@@ -1,74 +1,108 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8">
     <title>Zamanlayıcı Uygulaması - Kullanım Kılavuzu</title>
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            margin: 20px; 
-            line-height: 1.2; 
-            font-size: 22px; }
-        h1 { 
-            color:rgb(62, 88, 222); 
-            background-color: rgb(248, 255, 169)  !important; 
-            border-bottom: 3px solid rgb(7, 4, 167); 
-            padding-bottom: 10px; 
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.2;
+            font-size: 22px;
+        }
+
+        h1 {
+            color: rgb(62, 88, 222);
+            background-color: rgb(248, 255, 169) !important;
+            border-bottom: 3px solid rgb(7, 4, 167);
+            padding-bottom: 10px;
             font-size: 52px;
             font-weight: bold;
-            text-align: center; }
-        h2 { 
-            color:rgb(136, 38, 249); 
-            border-bottom: 1px solid #bdc3c7; 
-            padding-bottom: 5px; 
-            margin-top: 30px; }
-        h3 { 
-            color:rgb(48, 108, 186); 
-            margin-top: 20px; 
-            font-weight: bold; }
-        .feature { 
-            background-color:rgb(162, 236, 255); 
-            padding: 15px; 
-            margin: 10px 0; 
-            border-radius: 5px; }
-        .shortcut { 
-            background-color:rgb(183, 252, 183); 
-            padding: 10px; margin: 10px 0; 
-            border-radius: 5px; 
-            border-left: 4px solid #27ae60; }
-        .warning { 
-            background-color:rgb(249, 220, 193); 
-            padding: 10px; margin: 10px 0; 
-            border-radius: 5px; 
-            border-left: 4px solid #f39c12; }
-        .tip { 
-            background-color:rgb(175, 218, 251); 
-            padding: 10px; margin: 10px 0; 
-            border-radius: 5px; 
-            border-left: 4px solid #3498db; }
-        code { 
-            background-color:rgb(188, 190, 248); 
-            padding: 2px 5px; 
-            border-radius: 3px; 
-            font-family: monospace; }
-        ul { margin-left: 20px; }
-        li { margin-bottom: 5px; }
-        .new { 
-            color: #e74c3c; 
-            font-weight: bold; }
+            text-align: center;
+        }
+
+        h2 {
+            color: rgb(136, 38, 249);
+            border-bottom: 1px solid #bdc3c7;
+            padding-bottom: 5px;
+            margin-top: 30px;
+        }
+
+        h3 {
+            color: rgb(48, 108, 186);
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        .feature {
+            background-color: rgb(162, 236, 255);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+
+        .shortcut {
+            background-color: rgb(183, 252, 183);
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #27ae60;
+        }
+
+        .warning {
+            background-color: rgb(249, 220, 193);
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #f39c12;
+        }
+
+        .tip {
+            background-color: rgb(175, 218, 251);
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+        }
+
+        code {
+            background-color: rgb(188, 190, 248);
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+
+        ul {
+            margin-left: 20px;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+
+        .new {
+            color: #e74c3c;
+            font-weight: bold;
+        }
     </style>
 </head>
+
 <body>
 
-<h1>🕐 Zamanlayıcı Uygulaması - Kullanım Kılavuzu</h1>
+    <h1>🕐 Zamanlayıcı Uygulaması - Kullanım Kılavuzu</h1>
 
-<h2>📋 Genel Bakış</h2>
-<p>Bu zamanlayıcı uygulaması, birden fazla zamanlayıcıyı ve hatırlatıcıyı aynı anda çalıştırmanıza, tekrarlayan alarmlar 
-    ayarlamanıza ve favori zamanlayıcılarınızı yönetmenize olanak tanıyan gelişmiş bir araçtır. Program kapatılıp tekrar 
-    açıldığında, devam etmekte olan zamanlayıcının kalan süresi hesaplanır, tamamlananlar ekran sağ alt köşesinde gösterilir, 
-    halen devam edenler otomatik olarak başlar. Periyodik, belli bir zamnda başlayan, istenilen miktarda tekrar eden
-    zamanlayıcılar oluşturabilir, geçmişteki zamanlayıcıları inceleyebilir ve favori ayarlarınızı kaydedebilirsiniz.</p>
-</p>
+    <h2>📋 Genel Bakış</h2>
+    <p>Bu zamanlayıcı uygulaması, birden fazla zamanlayıcıyı ve hatırlatıcıyı aynı anda çalıştırmanıza, tekrarlayan
+        alarmlar
+        ayarlamanıza ve favori zamanlayıcılarınızı yönetmenize olanak tanıyan gelişmiş bir araçtır. Program kapatılıp
+        tekrar
+        açıldığında, devam etmekte olan zamanlayıcının kalan süresi hesaplanır, tamamlananlar ekran sağ alt köşesinde
+        gösterilir,
+        halen devam edenler otomatik olarak başlar. Periyodik, belli bir zamnda başlayan, istenilen miktarda tekrar eden
+        zamanlayıcılar oluşturabilir, geçmişteki zamanlayıcıları inceleyebilir ve favori ayarlarınızı kaydedebilirsiniz.
+    </p>
+    </p>
 
     <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
         <tr style="background-color: #f2f2f2;">
@@ -78,438 +112,512 @@
         </tr>
         <tr>
             <td>
-                <img src="screenshots/ana-ekran.png" alt="ana-ekran" width="300" style="border-radius: 8px; box-shadow: 0 2px 8px #ccc;">
+                <img src="screenshots/ana-ekran.png" alt="ana-ekran" width="300"
+                    style="border-radius: 8px; box-shadow: 0 2px 8px #ccc;">
             </td>
             <td>
-                <img src="screenshots/yeni-zamanlayici.png" alt="yeni-zamanlayici" width="300" style="border-radius: 8px; box-shadow: 0 2px 8px #ccc;">
+                <img src="screenshots/yeni-zamanlayici.png" alt="yeni-zamanlayici" width="300"
+                    style="border-radius: 8px; box-shadow: 0 2px 8px #ccc;">
             </td>
             <td>
-                <img src="screenshots/yeni-hatirlatici.png" alt="Yeni-Hatırlatıcı" width="300" style="border-radius: 8px; box-shadow: 0 2px 8px #ccc;">
+                <img src="screenshots/yeni-hatirlatici.png" alt="Yeni-Hatırlatıcı" width="300"
+                    style="border-radius: 8px; box-shadow: 0 2px 8px #ccc;">
             </td>
         </tr>
     </table>
 
-<h2>🚀 Ana Özellikler</h2>
+    <h2>🚀 Ana Özellikler</h2>
 
-<div class="feature">
-<h3>✨ Yeni Zamanlayıcı Oluşturma</h3>
-<ul>
-    <li><strong>Dakika Ayarı:</strong> 1-180 dakika arası zamanlayıcı kurabilirsiniz</li>
-    <li><strong>Açıklama:</strong> Her zamanlayıcı için özel açıklama ekleyebilirsiniz</li>
-    <li><strong>Alarm Zamanı Belirleme:</strong> Belirli bir saatte çalacak alarm kurabilirsiniz (İlk alarm için)</li>
-    <li><strong>Alarm Sesi Seçimi:</strong> Farklı alarm seslerini seçebilir ve önizleyebilirsiniz. 
-        İstediğiniz yeni alarm sesini MP3 formatında ekleyebilirsiniz</li>
-    <li><strong>Tekrar Sayısı:</strong> 1-99 arası tekrar sayısı belirleyebilirsiniz</li>
-    <li><strong>Tekrar Aralığı:</strong> Tekrarlar arası 0-180 dakika bekleme süresi ayarlayabilirsiniz</li>
-</ul>
-</div>
-
-<div class="feature">
-<h3>🔄 Aktif Zamanlayıcı Yönetimi</h3>
-<ul>
-    <li><strong>Çoklu Zamanlayıcı:</strong> Aynı anda birden fazla zamanlayıcı çalıştırabilirsiniz</li>
-    <li><strong>Gerçek Zamanlı Güncelleme:</strong> Kalan süre her saniye güncellenir</li>
-    <li><strong>Durdurma:</strong> İstediğiniz zaman zamanlayıcıyı durdurabilirsiniz</li>
-    <li><strong>Çift Tık Düzenleme:</strong> Aktif zamanlayıcıya çift tıklayarak ayarlarını değiştirebilirsiniz</li>
-    <li><strong>Süre Ayarlama:</strong> "⏱️ Süre Ayarla" düğmesiyle çalışan zamanlayıcının kalan süresini değiştirebilirsiniz</li>
-    <li><strong>Erken Tamamlama:</strong> "✅ Tamamlandı" düğmesiyle zamanlayıcıyı hemen sonlandırarak 
-        (tekrarlı ise) bir sonrakine geçmesini sağlayabilirsiniz)</li>
-    <li><strong>Tekrar Bilgisi:</strong> Tekrarlayan alarmlarda kaçıncı tekrarda olduğunuz gösterilir</li>
-</ul>
-</div>
-
-<div class="feature">
-<h3>⏱️ Süre Ayarlama</h3>
-<ul>
-    <li><strong>Özel Süre Belirleme:</strong> İstediğiniz dakika değerini manuel olarak girebilirsiniz</li>
-    <li><strong>Kesintisiz Ayarlama:</strong> Zamanlayıcıyı durdurmadan süreyi değiştirebilirsiniz</li>
-    <li><strong>Hızlı Süre Ekleme:</strong> Çalışan zamanlayıcıya ilave süre (mesela ek 10 dakika) ekleyebilirsiniz</li>
-    <li><strong>Süre Kısaltma:</strong> Negatif değer girerek (örn. -5) kalan süreyi azaltabilirsiniz</li>
-    <li><strong>Süreyi Sıfırlama:</strong> Süreyi 0 olarak ayarlayarak zamanlayıcıyı hemen sonlandırabilirsiniz</li>
-</ul>
-</div>
-
-<div class="feature">
-<h3>✅ Zamanlayıcı Tamamlama</h3>
-<ul>
-    <li><strong>Erken Tamamlama:</strong> "Tamamlandı" düğmesi ile zamanlayıcıyı süresi dolmadan bitirebilirsiniz</li>
-    <li><strong>Alarm Tetikleme:</strong> Erken tamamlama, alarm sesini normal tamamlanma gibi çalar</li>
-    <li><strong>Geçmişe Kaydetme:</strong> Tamamlanan zamanlayıcı otomatik olarak geçmiş listesine eklenir</li>
-    <li><strong>Tekrar Yönetimi:</strong> Tekrarlı zamanlayıcılarda, bir sonraki tekrar planlandığı gibi başlatılır</li>
-    <li><strong>Toplu Tamamlama:</strong> İhtiyaç duyulduğunda birden fazla zamanlayıcıyı tek tek tamamlayabilirsiniz</li>
-</ul>
-</div>
-
-<h2>⭐ <span class="new">FAVORİ SİSTEMİ</span></h2>
-
-<p>Sık kullandığınız zamanlayıcı ayarlarını favori olarak kaydedebilirsiniz:</p>
-<ul>
-    <li><strong>Favoriye ekleme:</strong> Geçmiş listesinde sağ tık → "Favorilere Ekle"</li>
-    <li><strong>Favoriyi başlatma:</strong> Favori listesinde çift tıklama</li>
-    <li><strong>Favori düzenleme:</strong> Favori listesinde sağ tık → "Favoriyi Düzenle"</li>
-    <li><strong>Favori silme:</strong> Çoklu seçim yap → "Seçilen Favorileri Sil" butonu</li>
-</ul>
-
-<div class="feature">
-<h3>📌 Favori Ekleme</h3>
-<ul>
-    <li><strong>Geçmişten Favori:</strong> Geçmiş listesinde herhangi bir zamanlayıcıya sağ tıklayıp "Favorilere Ekle" seçeneğini kullanın</li>
-    <li><strong>Aynı Favori Kontrolü:</strong> Aynı ayarlarda favori zaten varsa uyarı alırsınız</li>
-    <li><strong>Otomatik Kaydetme:</strong> Favoriler otomatik olarak kaydedilir ve program yeniden açıldığında yüklenir</li>
-</ul>
-</div>
-
-<div class="feature">
-<h3>🎯 Favori Kullanma</h3>
-<ul>
-    <li><strong>Hızlı Başlatma:</strong> Favori listesinde herhangi bir zamanlayıcıya çift tıklayarak hemen başlatabilirsiniz</li>
-    <li><strong class="new">Favori Düzenleme:</strong> Favori listesinde sağ tıklayıp "Favoriyi Düzenle" ile ayarları değiştirebilirsiniz</li>
-    <li><strong>Toplu Silme:</strong> Birden fazla favoriyi seçip toplu olarak silebilirsiniz</li>
-</ul>
-</div>
-
-
-<h2>⭐ <span class="new">LOG SİSTEMİ</span></h2>
-
-<div class="feature">
-<h3>📋 <span class="new">Log İzleme</span></h3>
-<ul>
-    <li><strong>Erişim:</strong> "Araçlar > Log'ları Göster" menüsünden veya <code>Ctrl+L</code> kısayoluyla açabilirsiniz</li>
-    <li><strong>Tarih ve Zaman:</strong> Her log kaydı, oluşturulma tarih ve saatiyle birlikte görüntülenir. 
-        Milisaniye detaylarının gösterilmesi, yüksek hızlı makinalarda dahi hangi sırayla işlemlerin gerçekleştiğini takip edebilmeye olanak sağlar</li>
-    <li><strong>Seviye Bilgisi:</strong> Loglar önem seviyesine göre (DEBUG, INFO, WARNING, ERROR, CRITICAL) gösterilir ve gruplanabilir</li>
-    <li><strong>Metin Filtreleme:</strong> Arama kutusu ile belirli log kayıtlarını filtreleyebilirsiniz</li>
-    <li><strong>Sıralama:</strong> Log kayıtlarını harf sırasına (dolayısıyla tarih sırasına) göre sıralayabilirsiniz</li>
-</ul>
-</div>
-
-<div class="feature">
-<h3>🔍 Log Dosyası İşlemleri</h3>
-<ul>
-    <li><strong>Kaydet:</strong> Görüntülenen log kayıtlarını güncelleyerek kaydedebilirsiniz</li>
-    <li><strong>Kopyala:</strong> Seçilen log kayıtlarını panoya kopyalayabilirsiniz</li>
-    <li><strong>Dosya Konumu:</strong> Log dosyaları <code>timer-data/</code> klasöründe saklanır</li>
-</ul>
-</div>
-
-<h3 style="color: #ff921d; margin-top: 20px;">Log Penceresi</h3>
-<p>
-    Uygulamanın çalışması sırasında meydana gelen tüm önemli olaylar (zamanlayıcı başlatma, tamamlanma, hatalar vb.) bir log dosyasına kaydedilir. 
-    <code>Araçlar > Log'ları Göster</code> menüsünü (kısayol: <code>Ctrl+L</code>) kullanarak bu kayıtları inceleyebilirsiniz. 
-    Log Görüntüleyici penceresi, özellikle başlayan bir alarmın sürecini izlemek ya da biten benzer alarmlar ile ilgili istatistiksel analiz yapmak için çok kullanışlıdır.
-</p>
-<p>
-    Bu pencerenin en güçlü özelliği, üst kısmında yer alan <strong>arama kutusudur</strong>. Bu arama kutusu, binlerce satır arasından aradığınız bilgiye hızla ulaşmanızı sağlayan gelişmiş filtreleme yeteneklerine sahiptir.
-</p>
-
-<h3 style="color: #ff921d; margin-top: 20px;">Gelişmiş Arama Özellikleri</h3>
-<p>Arama yaparken aşağıdaki kuralları kullanarak filtrelerinizi daha hassas hale getirebilirsiniz:</p>
-<ul style="line-height: 1.6;">
-    <li>
-        <strong>Büyük/Küçük Harf Duyarsız Arama:</strong> Arama yaparken büyük veya küçük harf kullanmanız fark etmez. 
-        Örneğin, <code>HATA</code>, <code>hata</code> veya <code>HaTa</code> yazmanız aynı sonuçları getirecektir.
-    </li>
-    <li>
-        <strong>Türkçe Karakter Desteği:</strong> Arama, Türkçe karakterlere (<code>ç, ğ, ı, ö, ş, ü</code>) ve onların Latin alfabelerindeki karşılıklarına (<code>c, g, i, o, s, u</code>) desteğe sahiptir. 
-        Bu sayede, <code>yapıldı</code> ve <code>YAPILDI</code> veya <code>yaPILdı</code> aramaları aynı sonuçları listeler.
-    </li>
-    <li>
-        <strong>Dahil Etme (+) ve Hariç Tutma (-):</strong> Arama terimlerinizin başına <code>+</code> veya <code>-</code> işareti koyarak sonuçları daraltabilirsiniz.
+    <div class="feature">
+        <h3>✨ Yeni Zamanlayıcı Oluşturma</h3>
         <ul>
-            <li>
-                <code>+</code> (VE): Kelimelerin arasında <code>+</code> olması, o kelimelerin log satırında <strong>mutlaka bulunması 
-                    gerektiğini</strong> belirtir. 
-                Birden fazla <code>+</code>'lı terim kullanmak, tüm terimleri içeren satırları getirir.
+            <li><strong>Dakika Ayarı:</strong> 1-180 dakika arası zamanlayıcı kurabilirsiniz</li>
+            <li><strong>Açıklama:</strong> Her zamanlayıcı için özel açıklama ekleyebilirsiniz</li>
+            <li><strong>Alarm Zamanı Belirleme:</strong> Belirli bir saatte çalacak alarm kurabilirsiniz (İlk alarm
+                için)</li>
+            <li><strong>Alarm Sesi Seçimi:</strong> Farklı alarm seslerini seçebilir ve önizleyebilirsiniz.
+                İstediğiniz yeni alarm sesini MP3 formatında ekleyebilirsiniz</li>
+            <li><strong>Tekrar Sayısı:</strong> 1-99 arası tekrar sayısı belirleyebilirsiniz</li>
+            <li><strong>Tekrar Aralığı:</strong> Tekrarlar arası 0-180 dakika bekleme süresi ayarlayabilirsiniz</li>
+        </ul>
+    </div>
+
+    <div class="feature">
+        <h3>🔄 Aktif Zamanlayıcı Yönetimi</h3>
+        <ul>
+            <li><strong>Çoklu Zamanlayıcı:</strong> Aynı anda birden fazla zamanlayıcı çalıştırabilirsiniz</li>
+            <li><strong>Gerçek Zamanlı Güncelleme:</strong> Kalan süre her saniye güncellenir</li>
+            <li><strong>Durdurma:</strong> İstediğiniz zaman zamanlayıcıyı durdurabilirsiniz</li>
+            <li><strong>Çift Tık Düzenleme:</strong> Aktif zamanlayıcıya çift tıklayarak ayarlarını değiştirebilirsiniz
+            </li>
+            <li><strong>Süre Ayarlama:</strong> "⏱️ Süre Ayarla" düğmesiyle çalışan zamanlayıcının kalan süresini
+                değiştirebilirsiniz</li>
+            <li><strong>Erken Tamamlama:</strong> "✅ Tamamlandı" düğmesiyle zamanlayıcıyı hemen sonlandırarak
+                (tekrarlı ise) bir sonrakine geçmesini sağlayabilirsiniz)</li>
+            <li><strong>Tekrar Bilgisi:</strong> Tekrarlayan alarmlarda kaçıncı tekrarda olduğunuz gösterilir</li>
+        </ul>
+    </div>
+
+    <div class="feature">
+        <h3>⏱️ Süre Ayarlama</h3>
+        <ul>
+            <li><strong>Özel Süre Belirleme:</strong> İstediğiniz dakika değerini manuel olarak girebilirsiniz</li>
+            <li><strong>Kesintisiz Ayarlama:</strong> Zamanlayıcıyı durdurmadan süreyi değiştirebilirsiniz</li>
+            <li><strong>Hızlı Süre Ekleme:</strong> Çalışan zamanlayıcıya ilave süre (mesela ek 10 dakika)
+                ekleyebilirsiniz</li>
+            <li><strong>Süre Kısaltma:</strong> Negatif değer girerek (örn. -5) kalan süreyi azaltabilirsiniz</li>
+            <li><strong>Süreyi Sıfırlama:</strong> Süreyi 0 olarak ayarlayarak zamanlayıcıyı hemen sonlandırabilirsiniz
+            </li>
+        </ul>
+    </div>
+
+    <div class="feature">
+        <h3>✅ Zamanlayıcı Tamamlama</h3>
+        <ul>
+            <li><strong>Erken Tamamlama:</strong> "Tamamlandı" düğmesi ile zamanlayıcıyı süresi dolmadan
+                bitirebilirsiniz</li>
+            <li><strong>Alarm Tetikleme:</strong> Erken tamamlama, alarm sesini normal tamamlanma gibi çalar</li>
+            <li><strong>Geçmişe Kaydetme:</strong> Tamamlanan zamanlayıcı otomatik olarak geçmiş listesine eklenir</li>
+            <li><strong>Tekrar Yönetimi:</strong> Tekrarlı zamanlayıcılarda, bir sonraki tekrar planlandığı gibi
+                başlatılır</li>
+            <li><strong>Toplu Tamamlama:</strong> İhtiyaç duyulduğunda birden fazla zamanlayıcıyı tek tek
+                tamamlayabilirsiniz</li>
+        </ul>
+    </div>
+
+    <h2>⭐ <span class="new">FAVORİ SİSTEMİ</span></h2>
+
+    <p>Sık kullandığınız zamanlayıcı ayarlarını favori olarak kaydedebilirsiniz:</p>
+    <ul>
+        <li><strong>Favoriye ekleme:</strong> Geçmiş listesinde sağ tık → "Favorilere Ekle"</li>
+        <li><strong>Favoriyi başlatma:</strong> Favori listesinde çift tıklama</li>
+        <li><strong>Favori düzenleme:</strong> Favori listesinde sağ tık → "Favoriyi Düzenle"</li>
+        <li><strong>Favori silme:</strong> Çoklu seçim yap → "Seçilen Favorileri Sil" butonu</li>
+    </ul>
+
+    <div class="feature">
+        <h3>📌 Favori Ekleme</h3>
+        <ul>
+            <li><strong>Geçmişten Favori:</strong> Geçmiş listesinde herhangi bir zamanlayıcıya sağ tıklayıp "Favorilere
+                Ekle" seçeneğini kullanın</li>
+            <li><strong>Aynı Favori Kontrolü:</strong> Aynı ayarlarda favori zaten varsa uyarı alırsınız</li>
+            <li><strong>Otomatik Kaydetme:</strong> Favoriler otomatik olarak kaydedilir ve program yeniden açıldığında
+                yüklenir</li>
+        </ul>
+    </div>
+
+    <div class="feature">
+        <h3>🎯 Favori Kullanma</h3>
+        <ul>
+            <li><strong>Hızlı Başlatma:</strong> Favori listesinde herhangi bir zamanlayıcıya çift tıklayarak hemen
+                başlatabilirsiniz</li>
+            <li><strong class="new">Favori Düzenleme:</strong> Favori listesinde sağ tıklayıp "Favoriyi Düzenle" ile
+                ayarları değiştirebilirsiniz</li>
+            <li><strong>Toplu Silme:</strong> Birden fazla favoriyi seçip toplu olarak silebilirsiniz</li>
+        </ul>
+    </div>
+
+
+    <h2>⭐ <span class="new">LOG SİSTEMİ</span></h2>
+
+    <div class="feature">
+        <h3>📋 <span class="new">Log İzleme</span></h3>
+        <ul>
+            <li><strong>Erişim:</strong> "Araçlar > Log'ları Göster" menüsünden veya <code>Ctrl+L</code> kısayoluyla
+                açabilirsiniz</li>
+            <li><strong>Tarih ve Zaman:</strong> Her log kaydı, oluşturulma tarih ve saatiyle birlikte görüntülenir.
+                Milisaniye detaylarının gösterilmesi, yüksek hızlı makinalarda dahi hangi sırayla işlemlerin
+                gerçekleştiğini takip edebilmeye olanak sağlar</li>
+            <li><strong>Seviye Bilgisi:</strong> Loglar önem seviyesine göre (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+                gösterilir ve gruplanabilir</li>
+            <li><strong>Metin Filtreleme:</strong> Arama kutusu ile belirli log kayıtlarını filtreleyebilirsiniz</li>
+            <li><strong>Sıralama:</strong> Log kayıtlarını harf sırasına (dolayısıyla tarih sırasına) göre
+                sıralayabilirsiniz</li>
+        </ul>
+    </div>
+
+    <div class="feature">
+        <h3>🔍 Log Dosyası İşlemleri</h3>
+        <ul>
+            <li><strong>Kaydet:</strong> Görüntülenen log kayıtlarını güncelleyerek kaydedebilirsiniz</li>
+            <li><strong>Kopyala:</strong> Seçilen log kayıtlarını panoya kopyalayabilirsiniz</li>
+            <li><strong>Dosya Konumu:</strong> Log dosyaları <code>timer-data/</code> klasöründe saklanır</li>
+        </ul>
+    </div>
+
+    <h3 style="color: #ff921d; margin-top: 20px;">Log Penceresi</h3>
+    <p>
+        Uygulamanın çalışması sırasında meydana gelen tüm önemli olaylar (zamanlayıcı başlatma, tamamlanma, hatalar vb.)
+        bir log dosyasına kaydedilir.
+        <code>Araçlar > Log'ları Göster</code> menüsünü (kısayol: <code>Ctrl+L</code>) kullanarak bu kayıtları
+        inceleyebilirsiniz.
+        Log Görüntüleyici penceresi, özellikle başlayan bir alarmın sürecini izlemek ya da biten benzer alarmlar ile
+        ilgili istatistiksel analiz yapmak için çok kullanışlıdır.
+    </p>
+    <p>
+        Bu pencerenin en güçlü özelliği, üst kısmında yer alan <strong>arama kutusudur</strong>. Bu arama kutusu,
+        binlerce satır arasından aradığınız bilgiye hızla ulaşmanızı sağlayan gelişmiş filtreleme yeteneklerine
+        sahiptir.
+    </p>
+
+    <h3 style="color: #ff921d; margin-top: 20px;">Gelişmiş Arama Özellikleri</h3>
+    <p>Arama yaparken aşağıdaki kuralları kullanarak filtrelerinizi daha hassas hale getirebilirsiniz:</p>
+    <ul style="line-height: 1.6;">
+        <li>
+            <strong>Büyük/Küçük Harf Duyarsız Arama:</strong> Arama yaparken büyük veya küçük harf kullanmanız fark
+            etmez.
+            Örneğin, <code>HATA</code>, <code>hata</code> veya <code>HaTa</code> yazmanız aynı sonuçları getirecektir.
+        </li>
+        <li>
+            <strong>Türkçe Karakter Desteği:</strong> Arama, Türkçe karakterlere (<code>ç, ğ, ı, ö, ş, ü</code>) ve
+            onların Latin alfabelerindeki karşılıklarına (<code>c, g, i, o, s, u</code>) desteğe sahiptir.
+            Bu sayede, <code>yapıldı</code> ve <code>YAPILDI</code> veya <code>yaPILdı</code> aramaları aynı sonuçları
+            listeler.
+        </li>
+        <li>
+            <strong>Dahil Etme (+) ve Hariç Tutma (-):</strong> Arama terimlerinizin başına <code>+</code> veya
+            <code>-</code> işareti koyarak sonuçları daraltabilirsiniz.
+            <ul>
                 <li>
-                    <strong class="new">Örnek:</strong>hatırlatıcı+yapıldı ➡️ hem "hatırlatıcı" hem de "yapıldı" kelimelerini içeren log satırlarını listeler.
+                    <code>+</code> (VE): Kelimelerin arasında <code>+</code> olması, o kelimelerin log satırında
+                    <strong>mutlaka bulunması
+                        gerektiğini</strong> belirtir.
+                    Birden fazla <code>+</code>'lı terim kullanmak, tüm terimleri içeren satırları getirir.
+                <li>
+                    <strong class="new">Örnek:</strong>hatırlatıcı+yapıldı ➡️ hem "hatırlatıcı" hem de "yapıldı"
+                    kelimelerini içeren log satırlarını listeler.
                 </li>
 
-            <li><code>-</code> (DEĞİL): Bir kelimeden önce  <code>-</code> olması, o kelimenin log satırında <strong> bulunmaması gerektiğini</strong> belirtir.</li>
+                <li><code>-</code> (DEĞİL): Bir kelimeden önce <code>-</code> olması, o kelimenin log satırında <strong>
+                        bulunmaması gerektiğini</strong> belirtir.</li>
                 <li>
-                    <strong class="new">Örnek:</strong>hatırlatıcı - yapılmayacak ➡️ "hatırlatıcı" kelimesinin bulunduğu ancak "yapılmayacak" kelimesini içermeyen log satırlarını listeler.
+                    <strong class="new">Örnek:</strong>hatırlatıcı - yapılmayacak ➡️ "hatırlatıcı" kelimesinin bulunduğu
+                    ancak "yapılmayacak" kelimesini içermeyen log satırlarını listeler.
                 </li>
-        </ul>
-    </li>
-</ul>
+            </ul>
+        </li>
+    </ul>
 
-<h3 style="color: #172668; margin-top: 20px;">Arama Örnekleri</h3>
-<table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-    <tr style="background-color: #f2f2f2;">
-        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Arama Sorgusu</th>
-        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Açıklama</th>
-    </tr>
-    <tr>
-        <td style="border: 1px solid #ddd; padding: 8px;"><code style="background-color: #eef; padding: 2px 4px; border-radius: 3px;">hatırlatıcı</code></td>
-        <td style="border: 1px solid #ddd; padding: 8px;">İçinde "hatırlatıcı" kelimesi geçen tüm logları listeler.</td>
-    </tr>
-    <tr style="background-color: #f9f9f9;">
-        <td style="border: 1px solid #ddd; padding: 8px;"><code style="background-color: #eef; padding: 2px 4px; border-radius: 3px;">zamanlayıcı + tamamlandı</code></td>
-        <td style="border: 1px solid #ddd; padding: 8px;">İçinde hem "zamanlayıcı" hem de "tamamlandı" kelimeleri geçen logları bulur. (Örn: Zamanlayıcı 352 - 'Pazartesi Değerlendirme Toplantısı' tamamlandı)</td>
-    </tr>
-    <tr>
-        <td style="border: 1px solid #ddd; padding: 8px;"><code style="background-color: #eef; padding: 2px 4px; border-radius: 3px;">zamanlayıcı - başlatılacak</code></td>
-        <td style="border: 1px solid #ddd; padding: 8px;">İçinde "zamanlayıcı" kelimesi geçen ama "başlatılacak" kelimesi geçmeyen tüm logları gösterir. Bu, "başlatılacak, güncellendi" gibi ara bildirimleri göstermemek için çok kullanışlıdır.</td>
-    </tr>
-    <tr style="background-color: #f9f9f9;">
-        <td style="border: 1px solid #ddd; padding: 8px;"><code style="background-color: #eef; padding: 2px 4px; border-radius: 3px;">zamanlayıcı + toplantı - durduruldu</code></td>
-        <td style="border: 1px solid #ddd; padding: 8px;">"toplantı" ile ilgili çalan ama manuel olarak durdurulmamış alarmlara ait tüm logları listeler.</td>
-    </tr>
-</table>
+    <h3 style="color: #172668; margin-top: 20px;">Arama Örnekleri</h3>
+    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+        <tr style="background-color: #f2f2f2;">
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Arama Sorgusu</th>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Açıklama</th>
+        </tr>
+        <tr>
+            <td style="border: 1px solid #ddd; padding: 8px;"><code
+                    style="background-color: #eef; padding: 2px 4px; border-radius: 3px;">hatırlatıcı</code></td>
+            <td style="border: 1px solid #ddd; padding: 8px;">İçinde "hatırlatıcı" kelimesi geçen tüm logları listeler.
+            </td>
+        </tr>
+        <tr style="background-color: #f9f9f9;">
+            <td style="border: 1px solid #ddd; padding: 8px;"><code
+                    style="background-color: #eef; padding: 2px 4px; border-radius: 3px;">zamanlayıcı + tamamlandı</code>
+            </td>
+            <td style="border: 1px solid #ddd; padding: 8px;">İçinde hem "zamanlayıcı" hem de "tamamlandı" kelimeleri
+                geçen logları bulur. (Örn: Zamanlayıcı 352 - 'Pazartesi Değerlendirme Toplantısı' tamamlandı)</td>
+        </tr>
+        <tr>
+            <td style="border: 1px solid #ddd; padding: 8px;"><code
+                    style="background-color: #eef; padding: 2px 4px; border-radius: 3px;">zamanlayıcı - başlatılacak</code>
+            </td>
+            <td style="border: 1px solid #ddd; padding: 8px;">İçinde "zamanlayıcı" kelimesi geçen ama "başlatılacak"
+                kelimesi geçmeyen tüm logları gösterir. Bu, "başlatılacak, güncellendi" gibi ara bildirimleri
+                göstermemek için çok kullanışlıdır.</td>
+        </tr>
+        <tr style="background-color: #f9f9f9;">
+            <td style="border: 1px solid #ddd; padding: 8px;"><code
+                    style="background-color: #eef; padding: 2px 4px; border-radius: 3px;">zamanlayıcı + toplantı - durduruldu</code>
+            </td>
+            <td style="border: 1px solid #ddd; padding: 8px;">"toplantı" ile ilgili çalan ama manuel olarak
+                durdurulmamış alarmlara ait tüm logları listeler.</td>
+        </tr>
+    </table>
 
-<div class="tip">
-<strong>💡 İpucu:</strong> Log kayıtları, program sorunlarını çözmede yardımcı olabilir. Bir hatayla karşılaştığınızda log kayıtlarını incelemek, sorunun kaynağını bulmanıza yardımcı olacaktır.
-</div>
+    <div class="tip">
+        <strong>💡 İpucu:</strong> Log kayıtları, program sorunlarını çözmede yardımcı olabilir. Bir hatayla
+        karşılaştığınızda log kayıtlarını incelemek, sorunun kaynağını bulmanıza yardımcı olacaktır.
+    </div>
 
 
-<h2>⌨️ <span class="new">KLAVYE KISAYOLLARI</span></h2>
+    <h2>⌨️ <span class="new">KLAVYE KISAYOLLARI</span></h2>
 
-<div class="shortcut">
-<h3>🔥 Hızlı Erişim Tuşları</h3>
-<ul>
-    <li><strong>F Tuşu:</strong> Favori listesini açar/kapatır</li>
-    <li><strong>G Tuşu:</strong> Geçmiş listesini açar/kapatır</li>
-    <li><strong>ESC Tuşu:</strong> Açık olan paneli (favori veya geçmiş) kapatır</li>
-</ul>
-</div>
-
-<div class="shortcut">
-<h3>🚀 <span class="new">Program Kontrolleri</span></h3>
-<ul>
-    <li><strong>Ctrl+T:</strong> Yeni zamanlayıcı oluşturur</li>
-    <li><strong>Ctrl+R:</strong> Yeni hatırlatıcı oluşturur</li>
-    <li><strong>F1:</strong> Yardım penceresini açar</li>
-    <li><strong>Alt+F4:</strong> Programı kapatır (ayarlar otomatik kaydedilir)</li>
-</ul>
-</div>
-
-<div class="shortcut">
-<h3>🧩 <span class="new">Araçlar ve Oyunlar</span></h3>
-<ul>
-    <li><strong>Ctrl+A:</strong> Dosya analizi aracını açar</li>
-    <li><strong>Ctrl+L:</strong> Log kayıtlarını görüntüler</li>
-    <li><strong>Ctrl+S:</strong> Sudoku oyununu açar</li>
-    <li><strong>Ctrl+E:</strong> Tetris oyununu açar</li>
-</ul>
-</div>
-
-<div class="tip">
-<strong>💡 İpucu:</strong> Klavye kısayolları sayesinde fare kullanmadan hızlıca program özelliklerine erişebilirsiniz! Kısayolları ezberlemek, zamanlayıcı uygulamasını çok daha verimli kullanmanızı sağlar.
-</div>
-
-<h2>📊 Geçmiş ve Kayıtlar</h2>
-<div class="feature">
-<h3>📈 Zamanlayıcı Geçmişi Panosu</h3>
-<ul>
-    <li><strong>Otomatik Kayıt:</strong> Tamamlanan tüm zamanlayıcılar otomatik olarak geçmişe kaydedilir</li>
-    <li><strong>Detaylı Bilgi:</strong> Tarih, süre, açıklama, alarm türü ve tekrar bilgileri gösterilir</li>
-    <li><strong>Yeniden Başlatma:</strong> Geçmişteki herhangi bir zamanlayıcıya çift tıklayarak yeniden başlatabilirsiniz</li>
-    <li><strong>Seçerek Silme:</strong> İstemediğiniz kayıtları seçerek silebilirsiniz</li>
-    <li><strong>Çoklu silme:</strong> Ctrl ile kayıtlar tıklayarak tek tek seçimden sonra ya da Shift ile bir gruba tıklayıp çoklu seçim yaparak, "Seçilen Geçmişi Sil" tuşuna basınız</li>
-    <li><strong>Program kapalıyken tamamlanan:</strong> "(Program kapalıyken tamamlandı)" etiketi</li>
-    <li><strong>Sağ Tık Menüsü:</strong> Geçmiş kayıtlarına sağ tıklayıp favorilere ekleyebilirsiniz</li>
-</ul>
-</div>
-
-<h2>💾 Otomatik Kaydetme</h2>
-<div class="feature">
-<h3>📈 Otomatik Kaydetme</h3>
-<ul>
-    <li>Tüm zamanlayıcı durumları otomatik olarak kaydedilir</li>
-    <li>Program kapatılıp açıldığında kalan sürelerle devam eder</li>
-    <li>Program kapalıyken geçen süre otomatik olarak hesaplanır</li>
-    <li>Veriler <code>timer-data/zamanlayici_ayarlar.json</code> dosyasında saklanır</li>
-</ul>
-
-<h2>🔊 Alarm Sistemi</h2>
-
-<div class="feature">
-<h3>🎵 Alarm Özellikleri</h3>
-<ul>
-    <li><strong>Çoklu Alarm Dosyası:</strong> Program <code>timer-data</code> klasöründeki <strong class="new">alarm*.mp3</strong> dosyalarını kullanır</li>
-    <li><strong>Özel Alarm Ekleme:</strong> İsmi "alarm" ile başlayan mp3 dosyalarını ekleyerek kendi alarmlarınızı programa tanıtabilirsiniz</li>
-    <li><strong>Önizleme:</strong> Zamanlayıcı ayarlarken alarm sesini dinleyebilirsiniz</li>
-    <li><strong>Döngüsel Çalma:</strong> Alarm sesi kapatılana kadar tekrar eder. Alarmı onaylamadan alarmı sessiz hale getirebilirsiniz</li>
-    <li><strong>Dosya Yedekleme:</strong> Alarm dosyası bulunamazsa varsayılan alarm (alarm-01.mp3) kullanılır</li>
-</ul>
-</div>
-
-<h2>✨ NLP</h2>
-<!-- NLP ile Hatırlatıcı Oluşturma Bölümü -->
-<div class="feature">
-<h3>✨ NLP ile Hatırlatıcı Oluşturma</h3>
-<ul>
-    <li>
-        <strong>Doğal Dil Desteği:</strong> Hatırlatıcı eklerken karmaşık ayarlarla uğraşmadan, günlük konuşma dilinde komutlar yazabilirsiniz.
-    </li>
-    <li>
-        <strong>Otomatik Zaman Algılama:</strong> Program, yazdığınız cümledeki tarih, saat, tekrar ve süre bilgilerini otomatik olarak algılar.
-    </li>
-    <li>
-        <strong>Tekrar ve Özel Saat:</strong> "Her gün saat 09:00'da su iç", "5 dakika sonra Youtube seyret", "Her cuma saat 17:00'de haftalık raporu gönder" gibi tekrarlı veya tek seferlik hatırlatıcılar oluşturabilirsiniz.
-    </li>
-    <li>
-        <strong>Desteklenen Komut Örnekleri:</strong>
+    <div class="shortcut">
+        <h3>🔥 Hızlı Erişim Tuşları</h3>
         <ul>
-            <li><code>5 dakika sonra alarm kur</code></li>
-            <li><code>Her gün saat 12:00'de ara öğün yap</code></li>
-            <li><code>5 dakika sonra Youtube seyret</code></li>
-            <li><code>2 gün sonra yürüyüşe çık</code></li>
-            <li><code>3 saat sonra çimleri sula</code></li>
-            <li><code>Her 3 günde bir saat 12:00'da toplantı yap</code></li>
+            <li><strong>F Tuşu:</strong> Favori listesini açar/kapatır</li>
+            <li><strong>G Tuşu:</strong> Geçmiş listesini açar/kapatır</li>
+            <li><strong>ESC Tuşu:</strong> Açık olan paneli (favori veya geçmiş) kapatır</li>
         </ul>
-    </li>
-    <li>
-        <strong>Kullanım:</strong> Ana ekrandaki <b>Doğal dilde hatırlatıcı girin</b> alanına komutunuzu yazıp <b>NLP ile Hatırlatıcı Oluştur</b> butonuna tıklayın.
-    </li>
-    <li>
-        <strong>Not:</strong> Komutunuzun anlaşılır ve açık olmasına dikkat edin. Program, Türkçe dilinde tarih ve saat ifadelerini tanıyacak şekilde geliştirilmiştir.
-    </li>
-</ul>
-</div>
+    </div>
 
-<h2>⚙️ Gelişmiş Özellikler</h2>
+    <div class="shortcut">
+        <h3>🚀 <span class="new">Program Kontrolleri</span></h3>
+        <ul>
+            <li><strong>Ctrl+T:</strong> Yeni zamanlayıcı oluşturur</li>
+            <li><strong>Ctrl+R:</strong> Yeni hatırlatıcı oluşturur</li>
+            <li><strong>F1:</strong> Yardım penceresini açar</li>
+            <li><strong>Alt+F4:</strong> Programı kapatır (ayarlar otomatik kaydedilir)</li>
+        </ul>
+    </div>
 
-<div class="feature">
-<h3>🕐 Özel Saat Ayarı</h3>
-<ul>
-    <li><strong>Belirli Saat:</strong> "Alarm Zamanı Belirle" seçeneği ile zamanlayıcıyı belirli bir saatte çalacak şekilde ayarlayabilirsiniz</li>
-    <li><strong>Otomatik Hesaplama:</strong> Mevcut zamandan hedef saate kadar kalan süre otomatik hesaplanır</li>
-    <li><strong>Ertesi Gün Desteği:</strong> Hedef saat geçmişse otomatik olarak ertesi güne ayarlanır</li>
-    <li><strong>Favori Düzenlemede:</strong> Favorileri düzenlerken özel saat ayarı dahil tüm hatırlatıcı bilgilerini değiştirebilirsiniz</li>
-</ul>
-</div>
+    <div class="shortcut">
+        <h3>🧩 <span class="new">Araçlar ve Oyunlar</span></h3>
+        <ul>
+            <li><strong>Ctrl+A:</strong> Dosya analizi aracını açar</li>
+            <li><strong>Ctrl+L:</strong> Log kayıtlarını görüntüler</li>
+            <li><strong>Ctrl+S:</strong> Sudoku oyununu açar</li>
+            <li><strong>Ctrl+E:</strong> Tetris oyununu açar</li>
+        </ul>
+    </div>
 
-<div class="feature">
-<h3>🔄 Tekrar Sistemi</h3>
-<ul>
-    <li><strong>Çoklu Tekrar:</strong> Bir zamanlayıcının 1-99 kez tekrarlanmasını sağlayabilirsiniz</li>
-    <li><strong>Aralık Ayarı:</strong> Tekrarlar arası bekleme süresi ayarlayabilirsiniz</li>
-    <li><strong>Tekrar Takibi:</strong> Kaçıncı tekrarda olduğunuz ekranda ve terminalde görüntülenir, ayrıca log kayıtlarında yer alır</li>
-    <li><strong>Otomatik Başlatma:</strong> Her tekrar belirtilen aralık sonunda otomatik başlar</li>
-</ul>
-</div>
+    <div class="tip">
+        <strong>💡 İpucu:</strong> Klavye kısayolları sayesinde fare kullanmadan hızlıca program özelliklerine
+        erişebilirsiniz! Kısayolları ezberlemek, zamanlayıcı uygulamasını çok daha verimli kullanmanızı sağlar.
+    </div>
 
-<h2>💾 Veri Yönetimi</h2>
+    <h2>📊 Geçmiş ve Kayıtlar</h2>
+    <div class="feature">
+        <h3>📈 Zamanlayıcı Geçmişi Panosu</h3>
+        <ul>
+            <li><strong>Otomatik Kayıt:</strong> Tamamlanan tüm zamanlayıcılar otomatik olarak geçmişe kaydedilir</li>
+            <li><strong>Detaylı Bilgi:</strong> Tarih, süre, açıklama, alarm türü ve tekrar bilgileri gösterilir</li>
+            <li><strong>Yeniden Başlatma:</strong> Geçmişteki herhangi bir zamanlayıcıya çift tıklayarak yeniden
+                başlatabilirsiniz</li>
+            <li><strong>Seçerek Silme:</strong> İstemediğiniz kayıtları seçerek silebilirsiniz</li>
+            <li><strong>Çoklu silme:</strong> Ctrl ile kayıtlar tıklayarak tek tek seçimden sonra ya da Shift ile bir
+                gruba tıklayıp çoklu seçim yaparak, "Seçilen Geçmişi Sil" tuşuna basınız</li>
+            <li><strong>Program kapalıyken tamamlanan:</strong> "(Program kapalıyken tamamlandı)" etiketi</li>
+            <li><strong>Sağ Tık Menüsü:</strong> Geçmiş kayıtlarına sağ tıklayıp favorilere ekleyebilirsiniz</li>
+        </ul>
+    </div>
 
-<div class="feature">
-<h3>🗂️ Otomatik Kaydetme</h3>
-<ul>
-    <li><strong>Sürekli Kayıt:</strong> Tüm ayarlar ve aktif zamanlayıcılar otomatik kaydedilir</li>
-    <li><strong>Program Kurtarma:</strong> Program kapanıp açıldığında aktif zamanlayıcılar kaldığı yerden devam eder</li>
-    <li><strong>Favori Kalıcılığı:</strong> Favoriler JSON dosyasında saklanır ve her açılışta yüklenir</li>
-    <li><strong>Geçmiş Saklama:</strong> Tüm işlemler <code>zamanlayici_log.txt</code> dosyasında saklanır</li>
-</ul>
-</div>
+    <h2>💾 Otomatik Kaydetme</h2>
+    <div class="feature">
+        <h3>📈 Otomatik Kaydetme</h3>
+        <ul>
+            <li>Tüm zamanlayıcı durumları otomatik olarak kaydedilir</li>
+            <li>Program kapatılıp açıldığında kalan sürelerle devam eder</li>
+            <li>Program kapalıyken geçen süre otomatik olarak hesaplanır</li>
+            <li>Veriler <code>timer-data/zamanlayici_ayarlar.json</code> dosyasında saklanır</li>
+        </ul>
 
-<h2>🎮 Ek Araçlar</h2>
+        <h2>🔊 Alarm Sistemi</h2>
 
-<div class="feature">
-<h3>📁 Dosya Analizi</h3>
-<ul>
-    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-        <tr style="background-color: #f2f2f2;">
-            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Dosya Analizi</th>
-            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Özellikler</th>
-        </tr>
-        <tr>
-            <td>
-                <img src="screenshots/dosya-analizi.png" alt="dosya-analizi" width="300" style="border-radius: 8px; box-shadow: 0 2px 8px #ccc;">
-            </td>
-            <td>
-                <li><strong>Dosya Analizi:</strong> Seçilen klasörlerin boyutunu ve dosya sayısını analiz eder</li>
-                <li><strong>Alt Klasörler:</strong> Alt klasörlerin boyutlarını ayrı ayrı gösterir</li>
-                <li><strong>Navigasyon:</strong> Klasörler arası kolayca gezinebilirsiniz</li>
-            </td>
-        </tr>
-    </table>
-</ul>
-</div>
+        <div class="feature">
+            <h3>🎵 Alarm Özellikleri</h3>
+            <ul>
+                <li><strong>Çoklu Alarm Dosyası:</strong> Program <code>timer-data</code> klasöründeki <strong
+                        class="new">alarm*.mp3</strong> dosyalarını kullanır</li>
+                <li><strong>Özel Alarm Ekleme:</strong> İsmi "alarm" ile başlayan mp3 dosyalarını ekleyerek kendi
+                    alarmlarınızı programa tanıtabilirsiniz</li>
+                <li><strong>Önizleme:</strong> Zamanlayıcı ayarlarken alarm sesini dinleyebilirsiniz</li>
+                <li><strong>Döngüsel Çalma:</strong> Alarm sesi kapatılana kadar tekrar eder. Alarmı onaylamadan alarmı
+                    sessiz hale getirebilirsiniz</li>
+                <li><strong>Dosya Yedekleme:</strong> Alarm dosyası bulunamazsa varsayılan alarm (01.mp3) kullanılır
+                </li>
+            </ul>
+        </div>
 
-<div class="feature">
-<h3>🎲 Oyunlar</h3>
-<ul>
-    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-        <tr style="background-color: #f2f2f2;">
-            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Sudoku</th>
-            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Tetris</th>
-        </tr>
-        <tr>
-            <td>
-                <img src="screenshots/sudoku-small.png" alt="sudoku" width="300" style="border-radius: 8px; box-shadow: 0 2px 8px #ccc;">
-            </td>
-            <td>
-                <img src="screenshots/tetris-small.png" alt="tetris" width="300" style="border-radius: 8px; box-shadow: 0 2px 8px #ccc;">
-            </td>
-        </tr>
-    </table>
-    
-    <li><strong>Sudoku:</strong> Farklı zorluk seviyeleri ile sudoku oynayabilirsiniz</li>
-    <li><strong>Tetris:</strong> Klasik tetris oyunu</li>
-</ul>
-</div>
+        <h2>✨ NLP</h2>
+        <!-- NLP ile Hatırlatıcı Oluşturma Bölümü -->
+        <div class="feature">
+            <h3>✨ NLP ile Hatırlatıcı Oluşturma</h3>
+            <ul>
+                <li>
+                    <strong>Doğal Dil Desteği:</strong> Hatırlatıcı eklerken karmaşık ayarlarla uğraşmadan, günlük
+                    konuşma dilinde komutlar yazabilirsiniz.
+                </li>
+                <li>
+                    <strong>Otomatik Zaman Algılama:</strong> Program, yazdığınız cümledeki tarih, saat, tekrar ve süre
+                    bilgilerini otomatik olarak algılar.
+                </li>
+                <li>
+                    <strong>Tekrar ve Özel Saat:</strong> "Her gün saat 09:00'da su iç", "5 dakika sonra Youtube
+                    seyret", "Her cuma saat 17:00'de haftalık raporu gönder" gibi tekrarlı veya tek seferlik
+                    hatırlatıcılar oluşturabilirsiniz.
+                </li>
+                <li>
+                    <strong>Desteklenen Komut Örnekleri:</strong>
+                    <ul>
+                        <li><code>5 dakika sonra alarm kur</code></li>
+                        <li><code>Her gün saat 12:00'de ara öğün yap</code></li>
+                        <li><code>5 dakika sonra Youtube seyret</code></li>
+                        <li><code>2 gün sonra yürüyüşe çık</code></li>
+                        <li><code>3 saat sonra çimleri sula</code></li>
+                        <li><code>Her 3 günde bir saat 12:00'da toplantı yap</code></li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>Kullanım:</strong> Ana ekrandaki <b>Doğal dilde hatırlatıcı girin</b> alanına komutunuzu
+                    yazıp <b>NLP ile Hatırlatıcı Oluştur</b> butonuna tıklayın.
+                </li>
+                <li>
+                    <strong>Not:</strong> Komutunuzun anlaşılır ve açık olmasına dikkat edin. Program, Türkçe dilinde
+                    tarih ve saat ifadelerini tanıyacak şekilde geliştirilmiştir.
+                </li>
+            </ul>
+        </div>
 
-<h2>🔧 Teknik Gereksinimler</h2>
+        <h2>⚙️ Gelişmiş Özellikler</h2>
 
-<div class="warning">
-<h3>📦 Gerekli Kütüphaneler</h3>
-<ul>
-    <li><code>pip install PyQt5</code> (PyQt5=5.15.11)</li>
-    <li><code>pip install dateparser</code> (dateparser=1.2.2)</li>
-    <li>Python 3.13.2 veya üzeri</li>
-</ul>
-</div>
+        <div class="feature">
+            <h3>🕐 Özel Saat Ayarı</h3>
+            <ul>
+                <li><strong>Belirli Saat:</strong> "Alarm Zamanı Belirle" seçeneği ile zamanlayıcıyı belirli bir saatte
+                    çalacak şekilde ayarlayabilirsiniz</li>
+                <li><strong>Otomatik Hesaplama:</strong> Mevcut zamandan hedef saate kadar kalan süre otomatik
+                    hesaplanır</li>
+                <li><strong>Ertesi Gün Desteği:</strong> Hedef saat geçmişse otomatik olarak ertesi güne ayarlanır</li>
+                <li><strong>Favori Düzenlemede:</strong> Favorileri düzenlerken özel saat ayarı dahil tüm hatırlatıcı
+                    bilgilerini değiştirebilirsiniz</li>
+            </ul>
+        </div>
 
-<div class="feature">
-<h3>📂 Dosya Yapısı</h3>
-<ul>
-    <li><strong>timer-data/:</strong> Alarm dosyaları ve ayarların saklandığı klasör</li>
-    <li><strong>alarm*.mp3:</strong> timer-data klasöründeki alarm ses dosyaları</li>
-    <li><strong>zamanlayici_ayarlar.json:</strong> Zamanlayıcılar, hatırlatıcılar ve programın çalışmasında kullanılan tüm ayarlar</li>
-    <li><strong>zamanlayici_log.txt:</strong> Log kayıtları</li>
-</ul>
-</div>
+        <div class="feature">
+            <h3>🔄 Tekrar Sistemi</h3>
+            <ul>
+                <li><strong>Çoklu Tekrar:</strong> Bir zamanlayıcının 1-99 kez tekrarlanmasını sağlayabilirsiniz</li>
+                <li><strong>Aralık Ayarı:</strong> Tekrarlar arası bekleme süresi ayarlayabilirsiniz</li>
+                <li><strong>Tekrar Takibi:</strong> Kaçıncı tekrarda olduğunuz ekranda ve terminalde görüntülenir,
+                    ayrıca log kayıtlarında yer alır</li>
+                <li><strong>Otomatik Başlatma:</strong> Her tekrar belirtilen aralık sonunda otomatik başlar</li>
+            </ul>
+        </div>
 
-<h2>🛠️ Sorun Giderme</h2>
+        <h2>💾 Veri Yönetimi</h2>
 
-<div class="warning">
-<h3>⚠️ Yaygın Sorunlar</h3>
-<ul>
-    <li><strong>Alarm Çalmıyor:</strong> timer-data klasöründe alarm-01.mp3 dosyasının varlığını kontrol edin</li>
-    <li><strong>Ayarlar Kayboldu:</strong> zamanlayici_ayarlar.json dosyasının varlığını ve erişim iznini kontrol edin</li>
-    <li><strong>Program Çöküyor:</strong> PyQt5 kütüphanesinin doğru yüklendiğinden emin olun</li>
-</ul>
-</div>
+        <div class="feature">
+            <h3>🗂️ Otomatik Kaydetme</h3>
+            <ul>
+                <li><strong>Sürekli Kayıt:</strong> Tüm ayarlar ve aktif zamanlayıcılar otomatik kaydedilir</li>
+                <li><strong>Program Kurtarma:</strong> Program kapanıp açıldığında aktif zamanlayıcılar kaldığı yerden
+                    devam eder</li>
+                <li><strong>Favori Kalıcılığı:</strong> Favoriler JSON dosyasında saklanır ve her açılışta yüklenir</li>
+                <li><strong>Geçmiş Saklama:</strong> Tüm işlemler <code>zamanlayici_log.txt</code> dosyasında saklanır
+                </li>
+            </ul>
+        </div>
 
-<h2>🔄 Güncelleme Geçmişi</h2>
+        <h2>🎮 Ek Araçlar</h2>
 
-<div class="tip">
-<h3>📅 Son Güncellemeler</h3>
-<ul>
-    <li><strong class="new">Favori Sistemi:</strong> Geçmişten favori ekleme ve yönetim sistemi</li>
-    <li><strong class="new">Favori Düzenleme:</strong> Mevcut favorilerin ayarlarını değiştirme özelliği</li>
-    <li><strong class="new">Klavye Kısayolları:</strong> F, G ve ESC tuşları ile hızlı navigasyon</li>
-    <li><strong class="new">Sağ Tık Menüleri:</strong> Geçmiş ve favori listelerinde bağlam menüleri</li>
-    <li><strong class="new">Çift Tık Düzenleme:</strong> Aktif zamanlayıcıları çift tıkla düzenleme</li>
-    <li><strong class="new">Gelişmiş Veri Yönetimi:</strong> Daha güvenilir kaydetme ve yükleme sistemi</li>
-</ul>
-</div>
+        <div class="feature">
+            <h3>📁 Dosya Analizi</h3>
+            <ul>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                    <tr style="background-color: #f2f2f2;">
+                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Dosya Analizi</th>
+                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Özellikler</th>
+                    </tr>
+                    <tr>
+                        <td>
+                            <img src="screenshots/dosya-analizi.png" alt="dosya-analizi" width="300"
+                                style="border-radius: 8px; box-shadow: 0 2px 8px #ccc;">
+                        </td>
+                        <td>
+                            <li><strong>Dosya Analizi:</strong> Seçilen klasörlerin boyutunu ve dosya sayısını analiz
+                                eder</li>
+                            <li><strong>Alt Klasörler:</strong> Alt klasörlerin boyutlarını ayrı ayrı gösterir</li>
+                            <li><strong>Navigasyon:</strong> Klasörler arası kolayca gezinebilirsiniz</li>
+                        </td>
+                    </tr>
+                </table>
+            </ul>
+        </div>
 
-<h2>📞 Destek</h2>
+        <div class="feature">
+            <h3>🎲 Oyunlar</h3>
+            <ul>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                    <tr style="background-color: #f2f2f2;">
+                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Sudoku</th>
+                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Tetris</th>
+                    </tr>
+                    <tr>
+                        <td>
+                            <img src="screenshots/sudoku-small.png" alt="sudoku" width="300"
+                                style="border-radius: 8px; box-shadow: 0 2px 8px #ccc;">
+                        </td>
+                        <td>
+                            <img src="screenshots/tetris-small.png" alt="tetris" width="300"
+                                style="border-radius: 8px; box-shadow: 0 2px 8px #ccc;">
+                        </td>
+                    </tr>
+                </table>
 
-<div class="tip">
-<p><strong>💡 İpucu:</strong> Bu uygulama açık kaynak kodludur. Kod içindeki yorumları inceleyerek daha detaylı bilgi alabilirsiniz.</p>
+                <li><strong>Sudoku:</strong> Farklı zorluk seviyeleri ile sudoku oynayabilirsiniz</li>
+                <li><strong>Tetris:</strong> Klasik tetris oyunu</li>
+            </ul>
+        </div>
 
-<p><strong>🎯 Kullanım İpuçları:</strong></p>
-<ul>
-    <li>Sık kullandığınız zamanlayıcıları favorilere ekleyerek hızlı erişim sağlayın</li>
-    <li>Klavye kısayollarını kullanarak daha verimli çalışın</li>
-    <li>Tekrarlayan görevler için tekrar sayısı ve aralığı özelliklerini kullanın</li>
-    <li>Farklı zamanlayıcılar için farklı alarm sesleri seçerek karışıklığı önleyin</li>
-</ul>
-</div>
+        <h2>🔧 Teknik Gereksinimler</h2>
 
-<hr>
-<p><em>Bu dokümantasyon Zamanlayıcı Uygulaması v2.0 için hazırlanmıştır.</em></p>
+        <div class="warning">
+            <h3>📦 Gerekli Kütüphaneler</h3>
+            <ul>
+                <li><code>pip install PyQt5</code> (PyQt5=5.15.11)</li>
+                <li><code>pip install dateparser</code> (dateparser=1.2.2)</li>
+                <li>Python 3.13.2 veya üzeri</li>
+            </ul>
+        </div>
+
+        <div class="feature">
+            <h3>📂 Dosya Yapısı</h3>
+            <ul>
+                <li><strong>timer-data/:</strong> Alarm dosyaları ve ayarların saklandığı klasör</li>
+                <li><strong>alarm*.mp3:</strong> timer-data klasöründeki alarm ses dosyaları</li>
+                <li><strong>zamanlayici_ayarlar.json:</strong> Zamanlayıcılar, hatırlatıcılar ve programın çalışmasında
+                    kullanılan tüm ayarlar</li>
+                <li><strong>zamanlayici_log.txt:</strong> Log kayıtları</li>
+            </ul>
+        </div>
+
+        <h2>🛠️ Sorun Giderme</h2>
+
+        <div class="warning">
+            <h3>⚠️ Yaygın Sorunlar</h3>
+            <ul>
+                <li><strong>Alarm Çalmıyor:</strong> timer-data klasöründe 01.mp3 dosyasının varlığını kontrol
+                    edin</li>
+                <li><strong>Ayarlar Kayboldu:</strong> zamanlayici_ayarlar.json dosyasının varlığını ve erişim iznini
+                    kontrol edin</li>
+                <li><strong>Program Çöküyor:</strong> PyQt5 kütüphanesinin doğru yüklendiğinden emin olun</li>
+            </ul>
+        </div>
+
+        <h2>🔄 Güncelleme Geçmişi</h2>
+
+        <div class="tip">
+            <h3>📅 Son Güncellemeler</h3>
+            <ul>
+                <li><strong class="new">Favori Sistemi:</strong> Geçmişten favori ekleme ve yönetim sistemi</li>
+                <li><strong class="new">Favori Düzenleme:</strong> Mevcut favorilerin ayarlarını değiştirme özelliği
+                </li>
+                <li><strong class="new">Klavye Kısayolları:</strong> F, G ve ESC tuşları ile hızlı navigasyon</li>
+                <li><strong class="new">Sağ Tık Menüleri:</strong> Geçmiş ve favori listelerinde bağlam menüleri</li>
+                <li><strong class="new">Çift Tık Düzenleme:</strong> Aktif zamanlayıcıları çift tıkla düzenleme</li>
+                <li><strong class="new">Gelişmiş Veri Yönetimi:</strong> Daha güvenilir kaydetme ve yükleme sistemi</li>
+            </ul>
+        </div>
+
+        <h2>📞 Destek</h2>
+
+        <div class="tip">
+            <p><strong>💡 İpucu:</strong> Bu uygulama açık kaynak kodludur. Kod içindeki yorumları inceleyerek daha
+                detaylı bilgi alabilirsiniz.</p>
+
+            <p><strong>🎯 Kullanım İpuçları:</strong></p>
+            <ul>
+                <li>Sık kullandığınız zamanlayıcıları favorilere ekleyerek hızlı erişim sağlayın</li>
+                <li>Klavye kısayollarını kullanarak daha verimli çalışın</li>
+                <li>Tekrarlayan görevler için tekrar sayısı ve aralığı özelliklerini kullanın</li>
+                <li>Farklı zamanlayıcılar için farklı alarm sesleri seçerek karışıklığı önleyin</li>
+            </ul>
+        </div>
+
+        <hr>
+        <p><em>Bu dokümantasyon Zamanlayıcı Uygulaması v2.0 için hazırlanmıştır.</em></p>
 
 </body>
+
 </html>
