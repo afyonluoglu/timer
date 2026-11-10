@@ -60,10 +60,10 @@ Uygulama, verilerini yerel dosya sistemindeki JSON yapılandırma dosyalarında 
 
 Hatırlatıcı sisteminin UI ve yönetim işlevlerini sağlayan yardımcı sınıf.
 
-  * **`__init__(self, parent_app)`**
-    * **İşlevi:** HatirlaticiManager sınıfını ve gerekli bileşenlerini ilklendirir.
+  * **`__init__(self, uygulama)`**
+    * **İşlevi:** Hatırlatıcı yöneticisi sınıfını ana uygulama referansı ile başlatır.
     * **Parametreler:**
-      * `parent_app`: Ana uygulama penceresi (`ZamanlayiciUygulamasi`) referansı.
+      * `uygulama`: Ana zamanlayıcı uygulaması (`ZamanlayiciUygulamasi`) örneği.
 
   * **`yeni_hatirlatici_ekle(self)`**
     * **İşlevi:** Yeni hatırlatıcı ekleme diyaloğunu aç.
@@ -230,6 +230,25 @@ Birden fazla öğenin checkbox ile işaretlenebildiği özel ComboBox sınıfı.
 
   * **`metni_guncelle(self)`**
     * **İşlevi:** İşaretli öğelere göre ComboBox üzerindeki özet metni ve ipucunu günceller.
+
+---
+
+
+#### `ComboSatirBoslukDelegate` (Sınıf)
+
+ComboBox açılır listesindeki satırlara dikey boşluk ekleyen delegate sınıfı.
+
+  * **`__init__(self, ek_yukseklik, parent)`**
+    * **İşlevi:** Satır yüksekliği artış miktarı ile delegate örneğini başlatır.
+    * **Parametreler:**
+      * `ek_yukseklik`: Varsayılan satır yüksekliğine eklenecek dikey piksel miktarı (`int`).
+      * `parent`: Delegate nesnesinin bağlı olduğu üst Qt bileşeni (`QObject` veya `None`).
+
+  * **`sizeHint(self, option, index)`**
+    * **İşlevi:** Mevcut satır boyutunun yalnızca dikey yüksekliğini artırarak döndürür.
+    * **Parametreler:**
+      * `option`: Öğenin görünüm ve stil seçeneklerini taşıyan `QStyleOptionViewItem` nesnesi.
+      * `index`: Boyutu hesaplanacak model öğesinin `QModelIndex` konumu.
 
 ---
 

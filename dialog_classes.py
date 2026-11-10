@@ -6,7 +6,7 @@ import random
 from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, 
                            QSpinBox, QLineEdit, QCheckBox, QTimeEdit, QComboBox, 
                            QPushButton, QLabel, QMessageBox, QProgressBar, QFrame,
-                           QScrollArea, QApplication, QTextEdit)  
+                           QScrollArea, QApplication, QTextEdit, QItemDelegate)
 from PyQt5.QtCore import Qt, QTime, QUrl, QTimer, QEvent
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QFont, QStandardItemModel, QStandardItem
@@ -16,6 +16,22 @@ import re
 # Modül ayrımı: Taşınan diyalog sınıfları ti_dialogs modülünden içe aktarılır
 from ti_dialogs import IlerlemeDialog, YardimPenceresi, AlarmDialog
 from ti_models import VARSAYILAN_ALARM_DOSYASI
+
+
+class ComboSatirBoslukDelegate(QItemDelegate):
+    """ComboBox açılır listesindeki satırlara dikey boşluk ekleyen delegate sınıfı"""
+
+    def __init__(self, ek_yukseklik=6, parent=None):
+        """Satır yüksekliği artış miktarı ile delegate örneğini başlatır"""
+        super().__init__(parent)
+        self.ek_yukseklik = ek_yukseklik
+
+    def sizeHint(self, option, index):
+        """Mevcut satır boyutunun yalnızca dikey yüksekliğini artırarak döndürür"""
+        # Varsayılan QItemDelegate mevcut seçim vurgusu ve checkbox çizim stilini korur
+        boyut = super().sizeHint(option, index)
+        boyut.setHeight(boyut.height() + self.ek_yukseklik)
+        return boyut
 
 
 class CheckableComboBox(QComboBox):
@@ -32,6 +48,7 @@ class CheckableComboBox(QComboBox):
         self.view().viewport().installEventFilter(self)
         self._son_tiklanan_veri = None
         self.model().dataChanged.connect(self._veri_degisti)
+        self.setItemDelegate(ComboSatirBoslukDelegate(ek_yukseklik=6, parent=self))
 
     def eventFilter(self, obj, event):
         """Fare tıklamalarını yakalayarak öğelerin işaretlenmesini ve menünün açık kalmasını sağlar"""
